@@ -1,0 +1,29 @@
+# Heavy Model Training Test Requirements
+
+# PyTorch ecosystem
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Model library
+timm>=0.9.16
+
+# System monitoring
+psutil>=5.9.0
+
+# Data processing
+numpy>=1.21.0
+
+# Network utilities
+requests>=2.28.0
+
+# Optional: For enhanced functionality
+# tensorboard>=2.11.0  # For logging (uncomment if needed)
+# matplotlib>=3.5.0    # For plotting (uncomment if needed)
+# tqdm>=4.64.0         # For progress bars (uncomment if needed)
+
+# GPU acceleration (choose based on your CUDA version)
+# For CUDA 11.8
+# torch+cu118 torchvision+cu118 --index-url https://download.pytorch.org/whl/cu118
+
+# For CUDA 12.1  
+# torch+cu121 torchvision+cu121 --index-url https://download.pytorch.org/whl/cu121 

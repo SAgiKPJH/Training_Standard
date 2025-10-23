@@ -1,0 +1,11 @@
+torch>=1.13.0
+torchvision>=0.14.0
+tensorflow>=2.10.0
+onnx>=1.13.0
+onnxruntime>=1.15.0
+tf2onnx>=1.13.0
+onnx2pytorch>=0.4.2
+onnx2tf>=1.0.0
+numpy>=1.24.0
+opencv-python>=4.8.0
+

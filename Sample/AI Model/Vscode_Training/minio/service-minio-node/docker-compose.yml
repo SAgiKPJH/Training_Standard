@@ -1,0 +1,31 @@
+services:
+  daq-minio-v1:
+    image: minio/minio
+    container_name: daq_minio_v1
+#    hostname: ${NODE_NAME}
+    restart: always
+    environment:
+      MINIO_ROOT_USER: mirero
+      MINIO_ROOT_PASSWORD: mirero2816!
+      MINIO_SERVER_URL: http://192.168.70.101:9000  # LB/고정 엔드포인트가 있으면 지정(HTTPS면 더 좋음)
+    command: >
+      server
+      http://192.168.70.101/data
+      http://192.168.70.102/data
+      http://192.168.70.37/data
+      http://192.168.70.61/data
+      --console-address :9001
+      --address :9000
+    volumes:
+      - /home/mirero/daq/volumes/working-storage/250812_001:/data
+#      - /data/export2:/export2
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    network_mode: host

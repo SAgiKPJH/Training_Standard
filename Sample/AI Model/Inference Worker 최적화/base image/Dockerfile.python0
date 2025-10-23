@@ -1,0 +1,57 @@
+# Build stage for Python dependencies
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
+
+ENV TZ=Asia/Seoul
+
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    # Install prerequisites for adding PPA
+    software-properties-common \
+    && \
+    # Add deadsnakes PPA for Python 3.10
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    # Install Python 3.10 (minimal required for Poetry)
+    python3.10 \
+    python3.10-venv \
+    # Install dotnet runtime prerequisites
+    wget \
+    curl \
+    apt-utils \
+    ca-certificates \
+    # Install gpu prerequisites
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    # Install tesseract 
+    tesseract-ocr tesseract-ocr-kor && \
+    # Install Microsoft package feed
+    wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb  && \
+    dpkg -i packages-microsoft-prod.deb  && \
+    rm packages-microsoft-prod.deb && \
+    # Install .NET
+    apt-get update && \
+    apt-get install -y --no-install-recommends dotnet-runtime-7.0 && \
+    # Cleanup
+    rm -rf /var/lib/apt/lists/*
+
+# Install pip for Python 3.10
+RUN wget https://bootstrap.pypa.io/get-pip.py && \
+    python3.10 get-pip.py && \
+    rm get-pip.py
+
+# Set Python 3.10 as default
+RUN ln -sf /usr/bin/python3.10 /usr/bin/python && \
+    ln -sf /usr/bin/python3.10 /usr/bin/python3 && \
+    ln -sf /usr/bin/pip3.10 /usr/bin/pip && \
+    ln -sf /usr/bin/pip3.10 /usr/bin/pip3
+
+COPY pyproject.toml poetry.lock ./
+
+# Install poetry and dependencies
+RUN pip install poetry==1.7.1 && \
+    poetry config virtualenvs.create false && \
+    poetry install --without dev --no-cache --no-interaction --no-root && \
+    # Remove poetry cache to reduce size of docker image 
+    rm -Rf ~/.cache/pypoetry

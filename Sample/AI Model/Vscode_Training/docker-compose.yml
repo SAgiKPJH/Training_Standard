@@ -1,0 +1,62 @@
+services:
+  train-develop-0:
+    build:
+      context: ./vscode-dev
+      dockerfile: Dockerfile
+    image: train-develop:0
+    container_name: train-develop-0
+    ports:
+      - "18080:8080"
+    environment:
+      - PASSWORD=system
+      - SUDO_PASSWORD=system
+      - GPU_COUNT=1
+      - SERVICE_INDEX=0
+      - NVIDIA_VISIBLE_DEVICES=0
+    volumes:
+      - /home/mirero/daq/volumes/default/train/train-develop-0:/workspace
+    runtime: nvidia
+    # FUSE 권한 for MinIO s3fs mount
+    cap_add:
+      - SYS_ADMIN  # FUSE 마운트를 위한 커널 권한
+    devices:
+      - /dev/fuse  # FUSE 장치 접근 권한
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  train-develop-1:
+    build:
+      context: ./vscode-dev
+      dockerfile: Dockerfile
+    image: train-develop:1
+    container_name: train-develop-1
+    ports:
+      - "18081:8080"
+    environment:
+      - PASSWORD=system
+      - SUDO_PASSWORD=system
+      - GPU_COUNT=1
+      - SERVICE_INDEX=1
+      - NVIDIA_VISIBLE_DEVICES=1
+    volumes:
+      - /home/mirero/daq/volumes/default/train/train-develop-1:/workspace
+    runtime: nvidia
+    # FUSE 권한 for MinIO s3fs mount
+    cap_add:
+      - SYS_ADMIN  # FUSE 마운트를 위한 커널 권한
+    devices:
+      - /dev/fuse  # FUSE 장치 접근 권한
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [gpu]
+    restart: unless-stopped

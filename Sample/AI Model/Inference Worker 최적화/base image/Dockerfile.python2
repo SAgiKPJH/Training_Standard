@@ -1,0 +1,94 @@
+# -------------------------------
+# Stage 0) CUDA/cuDNN 라이브러리 추출
+# -------------------------------
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04 AS builder
+
+# 딥러닝 프레임워크에서 흔히 필요한 so만 복사
+RUN set -eux; \
+    mkdir -p /opt/cuda-libs/lib64 /opt/cuda-libs/x86_64-linux-gnu; \
+    cp -av /usr/local/cuda/lib64/libcudart.so*      /opt/cuda-libs/lib64/; \
+    cp -av /usr/local/cuda/lib64/libnvrtc.so*       /opt/cuda-libs/lib64/; \
+    cp -av /usr/local/cuda/lib64/libnvToolsExt.so*  /opt/cuda-libs/lib64/ || true; \
+    for name in cublas cublasLt cudnn cufft curand cusolver cusparse nccl; do \
+      if ls /usr/lib/x86_64-linux-gnu/lib${name}*so* >/dev/null 2>&1; then \
+        cp -av /usr/lib/x86_64-linux-gnu/lib${name}*so* /opt/cuda-libs/x86_64-linux-gnu/; \
+      fi; \
+    done; \
+    # 디버깅용 nvidia-smi 바이너리(선택)
+    if command -v nvidia-smi >/dev/null 2>&1; then \
+      cp -av "$(command -v nvidia-smi)" /opt/cuda-libs/; \
+    fi
+
+# -------------------------------
+# Stage 1) Python 의존성 wheel 빌드
+# -------------------------------
+FROM python:3.10-slim AS wheels
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /tmp/app
+
+# 빌드에만 필요한 도구(최종 단계에는 포함되지 않음)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential gcc g++ make git curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Poetry 잠금파일 기반으로 requirements 생성
+COPY pyproject.toml poetry.lock ./
+RUN pip install --no-cache-dir "poetry==1.7.1"
+RUN poetry export --without dev -f requirements.txt -o requirements.txt
+
+# (옵션) CUDA 전용 휠 인덱스가 필요한 프레임워크용(예: PyTorch cu118)
+# 빌드 시 --build-arg PIP_EXTRA_INDEX_URL=... 로 주입
+ARG PIP_EXTRA_INDEX_URL=""
+ENV PIP_EXTRA_INDEX_URL=$PIP_EXTRA_INDEX_URL
+
+# wheelhouse 생성 (최종 단계에서 --no-index로 설치)
+RUN pip wheel --no-cache-dir -r requirements.txt -w /wheelhouse
+
+# -------------------------------
+# Stage 2) 최소 런타임
+# -------------------------------
+FROM python:3.10-slim
+
+ARG WITH_TESSERACT=0            # 1로 설정하면 tesseract-ocr 포함
+ARG WITH_CV_GL=0                # 1로 설정하면 OpenCV GUI/GL 런타임(libglib2.0-0, libgl1) 포함
+
+ENV TZ=Asia/Seoul \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    # CUDA/cuDNN so 위치 등록
+    LD_LIBRARY_PATH=/usr/local/cuda-libs/lib64:/usr/local/cuda-libs/x86_64-linux-gnu:${LD_LIBRARY_PATH}
+
+# 슬림 런타임 필수 라이브러리만 설치 (+ 선택 옵션)
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends ca-certificates libstdc++6 libgcc-s1 libgomp1; \
+    if [ "$WITH_TESSERACT" = "1" ]; then \
+      apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-kor; \
+    fi; \
+    if [ "$WITH_CV_GL" = "1" ]; then \
+      apt-get install -y --no-install-recommends libglib2.0-0 libgl1; \
+    fi; \
+    rm -rf /var/lib/apt/lists/*
+
+# CUDA/cuDNN 사용자 공간 라이브러리 주입
+COPY --from=builder /opt/cuda-libs /usr/local/cuda-libs
+
+# (선택) nvidia-smi 링크(있을 때만)
+RUN if [ -f /usr/local/cuda-libs/nvidia-smi ]; then \
+      ln -s /usr/local/cuda-libs/nvidia-smi /usr/bin/nvidia-smi || true; \
+    fi
+
+# Python 의존성 설치 (온라인 접근 없이 wheelhouse만 사용)
+COPY --from=wheels /wheelhouse /wheelhouse
+COPY --from=wheels /tmp/app/requirements.txt /requirements.txt
+RUN pip install --no-index --find-links=/wheelhouse -r /requirements.txt \
+ && rm -rf /wheelhouse /requirements.txt
+
+# 앱 코드 (필요 시 조정)
+WORKDIR /app
+
+COPY smoke_test.py /usr/local/bin/smoke_test.py
+CMD ["python", "/usr/local/bin/smoke_test.py"]
