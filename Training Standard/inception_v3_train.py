@@ -1,3 +1,5 @@
+import json
+
 ##!--{"Name":"hyperparameter","Type":"epoch","Key":"epoch","Value":"","Category":""}
 ##!--{"Name":"hyperparameter","Type":"batch_size","Key":"batch_size","Value":"","Category":""}
 ##!--{"Name":"result","Type":"result","Key":"id","Value":"","Category":""}
@@ -38,8 +40,8 @@ parameters = '''{
 
 
 def RecipeRun(**kwargs):
-    return None
-
+    pass
+    
 if __name__ =="__main__":
     kwargs = json.loads(parameters)
     kwargs['authentication']['operation_service_address'] = ""
