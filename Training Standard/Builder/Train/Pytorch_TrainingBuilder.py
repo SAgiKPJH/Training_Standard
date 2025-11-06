@@ -113,7 +113,7 @@ class Pytorch_TrainingBuilder:
         inputs = batch[0].to(self.__device)
         labels = batch[1].to(self.__device)
         with torch.cuda.amp.autocast(enabled=self.__using_amp):
-            output, _ = self.__model(inputs)
+            output, *_ = self.__model(inputs)
             loss = self.__criterion(output, labels)
         self.__optimizer.zero_grad()
         loss.backward()
