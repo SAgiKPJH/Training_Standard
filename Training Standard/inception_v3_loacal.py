@@ -94,9 +94,10 @@ class SaveHook(TrainHook):
 
 
 from Builder import Pytorch_InceptionV3
+from Builder import Pytorch_InceptionV1
 from Builder import Pytorch_TrainingBuilder
 try:
-    model = Pytorch_InceptionV3().init_device(hyperparameter_builder.get_device()
+    model = Pytorch_InceptionV1().init_device(hyperparameter_builder.get_device()
         ).init_model(
             num_classes=classcode_builder.get_class_count()
         ).get_model()
