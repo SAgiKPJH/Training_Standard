@@ -50,7 +50,7 @@ from Builder import Pytorch_TrainingBuilder
 
 from Builder import TrainHook
 class SaveHook(TrainHook):
-    def __init__(self, save_epoch, logger, bucket_url, operation_channel, access_token, chunk_size):
+    def __init__(self, save_epoch, logger, bucket_url, operation_channel, access_token, chunk_size, label_info=None, etc=None):
         self.__save_epoch = save_epoch
         self.__loss = None
 
@@ -60,6 +60,8 @@ class SaveHook(TrainHook):
         from Builder import DAQ_SaveBuilder
         self.__save_builder = DAQ_SaveBuilder(
                 ).init_inference_info(
+                    label_info = label_info,
+                    etc=etc
                 ).init_save_url(
                     bucket_url= bucket_url,
                     operation_channel= operation_channel,
@@ -143,13 +145,15 @@ def RecipeRun(**kwargs):
                                 criterion_name=hyperparameter_builder.get_criterion()
                            ).builder()
 
+        label_info = {'inference_info' : json.dumps({"input_size": hyperparameter_builder.get_input_size(), "label_info": classcode_builder.get_label_info()})}
         savehook = SaveHook(
                     save_epoch=hyperparameter_builder.get_save_epoch(),
                     logger=logger,
                     bucket_url=operation_builder.get_bucket_url(),
                     operation_channel=operation_builder.get_operation_channel(),
                     access_token=operation_builder.get_access_token(),
-                    chunk_size=operation_builder.get_chunk_size()
+                    chunk_size=operation_builder.get_chunk_size(),
+                    label_info=label_info
                    )
 
         training_builder.train(
