@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-class DAQ_Pytorch_InceptionV3:
+class Pytorch_InceptionV3:
     def __init__(self):
         self.__device = 'cpu'
         self.__model = None

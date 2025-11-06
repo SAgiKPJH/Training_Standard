@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from .TrainHook import TrainHook
 
-class DAQ_Pytorch_TrainingBuilder:
+class Pytorch_TrainingBuilder:
     def __init__(self, logger = None):
         self.__logger = logger
         

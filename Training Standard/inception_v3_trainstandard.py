@@ -45,8 +45,8 @@ from Builder import Operation_Builder
 from Builder import Json_HyperparameterBuilder
 from Builder import DAQ_Classification_ClassCodeBuilder
 from Builder import DAQ_Pytorch_ClassificatoinDatasetBuilder
-from Builder import DAQ_Pytorch_InceptionV3
-from Builder import DAQ_Pytorch_TrainingBuilder
+from Builder import Pytorch_InceptionV3
+from Builder import Pytorch_TrainingBuilder
 
 from Builder import TrainHook
 class SaveHook(TrainHook):
@@ -133,14 +133,14 @@ def RecipeRun(**kwargs):
 
     try:
         
-        model = DAQ_Pytorch_InceptionV3(
+        model = Pytorch_InceptionV3(
                 ).init_device(
                     hyperparameter_builder.get_device()
                 ).init_model(
                     num_classes=classcode_builder.get_class_count()
                 ).get_model()
         
-        training_builder = DAQ_Pytorch_TrainingBuilder(logger
+        training_builder = Pytorch_TrainingBuilder(logger
                            ).initialize(
                                 epoch_total=hyperparameter_builder.get_epoch(),
                                 device= hyperparameter_builder.get_device(), # model.device

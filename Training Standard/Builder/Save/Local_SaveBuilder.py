@@ -362,14 +362,23 @@ class Local_SaveBuilder:
 
         return result
 
-    def _save_file_index(self, index_path: str = "file_index.json") -> None:
-        """저장된 파일 목록을 JSON 파일로 저장합니다."""
-        index_content = json.dumps(self.__saved_files, indent=2, ensure_ascii=False)
-        save_path = os.path.join(self.__save_url, index_path)
+    def _save_file_index(self, index_path: str = "file_index.csv") -> None:
+        """저장된 파일 목록을 CSV 파일로 저장합니다."""
+        # CSV 형태로 변환: [header, row1, row2, ...]
+        # Header: directory, filename, type
+        data = [["directory", "filename", "type"]]
 
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        with open(save_path, 'w', encoding='utf-8') as f:
-            f.write(index_content)
+        # self.__saved_files 구조: { "directory": [{"name": "file1", "type": "csv"}, ...] }
+        for directory, files in self.__saved_files.items():
+            for file_info in files:
+                row = [
+                    directory if directory else "",  # 빈 디렉토리는 빈 문자열로
+                    file_info.get("name", ""),
+                    file_info.get("type", "")
+                ]
+                data.append(row)
+
+        self.save_csv(data, index_path)
 
     def build(self):
         return self
