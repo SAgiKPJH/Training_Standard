@@ -1,6 +1,6 @@
 import os
 import random
-import mpp
+import cv2
 import torch
 from torch.utils.data import Dataset
 
@@ -178,7 +178,8 @@ class ClassificationDataset(Dataset):
 
     def __getitem__(self, index):
         uri = self.__uri_list[index]
-        image = mpp.intel64.load(uri, False)
+        image = cv2.imread(uri)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = self.__transform(image)
         label = self.__label_list[index]
 
