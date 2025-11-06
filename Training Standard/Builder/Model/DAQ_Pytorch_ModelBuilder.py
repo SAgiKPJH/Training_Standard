@@ -7,9 +7,9 @@ class DAQ_Pytorch_InceptionV3:
         self.__model = None
     
     def init_device(self, device):
-        if device and not torch.cuda.is_available():
+        if device == 'cuda' and not torch.cuda.is_available():
             raise Exception("GPU is not available")
-        self.__device = 'cuda' if device else 'cpu'
+        self.__device = 'cuda' if device == 'cuda' else 'cpu'
         return self
     
     def init_model(self, num_classes):

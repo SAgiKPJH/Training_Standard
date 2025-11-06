@@ -84,6 +84,21 @@ class Json_HyperparameterBuilder:
                 return self.__hyperparams[key]
             
         return 'CrossEntropyLoss'
+    
+    def get_normalize_mean(self):
+        return self.__hyperparams['normalize_mean']
+    
+    def get_normalize_stdev(self):
+        return self.__hyperparams['normalize_stdev']
+    
+    def get_using_gpu(self):
+        return self.__hyperparams['using_gpu']
+    
+    def get_device(self):
+        if self.get_using_gpu():
+            return 'cuda'
+        else:
+            return 'cpu'
 
     def build(self):
         return self

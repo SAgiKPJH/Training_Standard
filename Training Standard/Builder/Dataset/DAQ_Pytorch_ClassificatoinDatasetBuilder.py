@@ -7,6 +7,7 @@ import random
 import mpp
 from mpp.daq import protos
 import torch
+
 from google.protobuf.wrappers_pb2 import StringValue
 from torch.utils.data import Dataset
 
@@ -22,17 +23,19 @@ class DAQ_Pytorch_ClassificatoinDatasetBuilder:
         self.__classification_gts = None
         self.__train_data_loader = None
         self.__validation_data_loader = None
-    
-    def init_url_info(self, operation_channel, access_token):
-        self.__operation_channel = operation_channel
-        self.__access_token = access_token
-        return self
+
+        self.__transform = None
     
     def get_train_data_loader(self):
         return self.__train_data_loader
     
     def get_validation_data_loader(self):
         return self.__validation_data_loader
+    
+    def init_url_info(self, operation_channel, access_token):
+        self.__operation_channel = operation_channel
+        self.__access_token = access_token
+        return self
     
     def init_dataset_gts(self, gt_dataset_id):
         if not self.__operation_channel: 
@@ -52,17 +55,28 @@ class DAQ_Pytorch_ClassificatoinDatasetBuilder:
         self.__classification_gts = response.classification_gts
         return self
 
-    def create_train_dataset(self, train_ratio, transform, batch_size, validation_save_random, class_code_info):
+    def init_transform(self, input_size, normalize_mean, normalize_stdev):
+        import torchvision.transforms as transforms
+        from PIL import Image
+
+        transform = transforms.Compose([    
+        transforms.Lambda(lambda img: Image.fromarray(img).convert("RGB")),
+            transforms.ToTensor(),
+            transforms.Resize((input_size, input_size)),
+            transforms.Normalize((normalize_mean, normalize_mean, normalize_mean), (normalize_stdev, normalize_stdev, normalize_stdev))
+        ])
+        self.__transform = transform
+        return self   
+
+    def create_train_dataset(self, train_ratio, batch_size, validation_save_random, class_code_info):
         if self.__logger: self.__logger.info("Create Train Dataset")
         try:
             train_data_info, validation_data_info = self.data_download(train_ratio,
                                                                        self.__local_download_path,
                                                                        self.__classification_gts,
-                                                                       class_code_info,
-                                                                       self.__operation_channel,
-                                                                       self.__access_token)
+                                                                       class_code_info)
 
-            train_dataset = ClassificationDataset(train_data_info, transform)
+            train_dataset = ClassificationDataset(train_data_info, self.__transform)
             train_data_loader = torch.utils.data.DataLoader(train_dataset,
                                                             batch_size,
                                                             shuffle=True,
@@ -72,7 +86,7 @@ class DAQ_Pytorch_ClassificatoinDatasetBuilder:
             valid_flag = False
             if len(validation_data_info[0]) > 0:
                 valid_flag = True
-                validation_dataset = ClassificationDataset(validation_data_info, transform)
+                validation_dataset = ClassificationDataset(validation_data_info, self.__transform)
                 validation_data_loader = torch.utils.data.DataLoader(validation_dataset,
                                                                      batch_size=1,
                                                                      shuffle=validation_save_random,
@@ -134,7 +148,13 @@ class DAQ_Pytorch_ClassificatoinDatasetBuilder:
     def temp_folder_delete(self):
         if os.path.exists(self.__local_download_path):
             shutil.rmtree(self.__local_download_path)
-            self.__logger.info("Temp Folder Delete")
+            if self.__logger: self.__logger.info("Temp Folder Delete")
+
+    def success(self):
+        return self.__train_data_loader is not None and self.__validation_data_loader is not None
+
+    def build(self):
+        return self
     
 class ClassificationDataset(Dataset):
     def __init__(self, train_dataset, transform):

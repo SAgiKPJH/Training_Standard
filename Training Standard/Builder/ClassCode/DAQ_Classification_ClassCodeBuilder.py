@@ -18,7 +18,7 @@ class DAQ_Classification_ClassCodeBuilder:
     def get_class_code_info(self):
         return self.__class_code_info
 
-    def get_num_classes(self):
+    def get_class_count(self):
         return self.__num_classes
     
     def init_url_info(self, operation_channel, access_token):
@@ -46,7 +46,7 @@ class DAQ_Classification_ClassCodeBuilder:
 
     def _build_label_info(self, class_code_set_id):
         if self.__operation_channel:
-            return self._build_label_info_from_api(class_code_set_id, self.__operation_channel, self.__access_token)
+            return self._build_label_info_from_api(class_code_set_id)
         return self._build_label_info_from_local(class_code_set_id)
 
     def _build_label_info_from_api(self, class_code_set_id):
@@ -79,3 +79,6 @@ class DAQ_Classification_ClassCodeBuilder:
             label_info[f'label_{i}'] = {"code": i, "name": class_code}
 
         return label_info, class_code_info, num_classes
+    
+    def build(self):
+        return self

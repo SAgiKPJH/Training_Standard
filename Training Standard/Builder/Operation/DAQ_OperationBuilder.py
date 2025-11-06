@@ -16,19 +16,12 @@ class Operation_Builder:
         self.__device = None
         
     def initialize(self):
-        self.__init_device()
         self.__init_access_token()
         self.__init_operation_channel()
         self.__init_bucket_url()
         self.__init_chunk_size()
         return self
 
-    def __init_device(self):
-        device = self.__keyword_arguments['hyperparameter']['using_gpu']
-        if device and not torch.cuda.is_available():
-            raise Exception("GPU is not available")
-        self.__device = 'cuda' if device else 'cpu'
-        
     def __init_operation_channel(self):
         address = self.__keyword_arguments['authentication']['operation_service_address']
         selected_address = random.choice(address.split(","))
@@ -86,5 +79,14 @@ class Operation_Builder:
     def get_chunk_size(self):
         return self.__chunk_size
 
-    def build(self):
+    def get_keyword_arguments(self):
         return self.__keyword_arguments
+    
+    def get_gt_dataset_id(self):
+        return self.__keyword_arguments['gt_dataset']['gt_dataset_id']
+
+    def get_json_hyperparameter(self):
+        return json.dumps(self.__keyword_arguments['hyperparameter'])
+
+    def build(self):
+        return self

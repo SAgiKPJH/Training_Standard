@@ -5,8 +5,9 @@ from .ClassCode.DAQ_Classification_ClassCodeBuilder import DAQ_Classification_Cl
 from .Dataset.DAQ_Pytorch_ClassificatoinDatasetBuilder import DAQ_Pytorch_ClassificatoinDatasetBuilder
 from .Model.DAQ_Pytorch_ModelBuilder import DAQ_Pytorch_InceptionV3
 from .Train.DAQ_Pytorch_TrainingBuilder import DAQ_Pytorch_TrainingBuilder
+from .Train.DAQ_Pytorch_TrainingBuilder import TrainHook
 from .Operation.DAQ_OperationBuilder import Operation_Builder
-from .Monitoring.DAQ_MonitoringBuilder import DAQ_MonitoringBuilder
+from .Monitoring.DAQ_MonitoringBuilder import DAQ_MoritoringBuilder
 
 __all__ = [
     'DAQ_SaveBuilder',
@@ -16,6 +17,7 @@ __all__ = [
     'DAQ_Pytorch_ClassificatoinDatasetBuilder',
     'DAQ_Pytorch_InceptionV3',
     'DAQ_Pytorch_TrainingBuilder',
+    'TrainHook',
     'Operation_Builder',
     'DAQ_MonitoringBuilder',
 ]
