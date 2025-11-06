@@ -45,7 +45,7 @@ class DAQ_SaveBuilder:
             builder.init_inference_info(label_info={...}, etc={'input_size': [224,224,3], ...})
         """
         # allow None -> treat as empty dict so fields remain blank in saved metadata
-        if label_info in None and etc in None:
+        if label_info is None and etc is None:
             return self
         if label_info is None:
             label_info = {}

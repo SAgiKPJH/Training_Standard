@@ -145,6 +145,7 @@ def RecipeRun(**kwargs):
                                 criterion_name=hyperparameter_builder.get_criterion()
                            ).builder()
 
+        import json
         label_info = {'inference_info' : json.dumps({"input_size": hyperparameter_builder.get_input_size(), "label_info": classcode_builder.get_label_info()})}
         savehook = SaveHook(
                     save_epoch=hyperparameter_builder.get_save_epoch(),
