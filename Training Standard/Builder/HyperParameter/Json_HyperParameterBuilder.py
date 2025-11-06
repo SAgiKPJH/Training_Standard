@@ -21,16 +21,11 @@ class Json_HyperparameterBuilder:
     def __init__(self, json_parameter = parameters):
         self.__hyperparams = json.loads(json_parameter)
 
-    def initialize(self):
-        self.__hyperparams['epoch'] = int(self.__hyperparams['epoch'])
-        self.__hyperparams['batch_size'] = int(self.__hyperparams['batch_size'])
-        return self
-
     def get_train_ratio(self):
         return self.__hyperparams['train_ratio']
     
-    def get_batch_size(self):
-        return self.__hyperparams['batch_size']
+    def get_batch_size(self)->int:
+        return int(self.__hyperparams['batch_size'])
     
     def get_validation_save_random(self):
         return self.__hyperparams.get('validation_save_random', False)
@@ -54,11 +49,11 @@ class Json_HyperparameterBuilder:
     def get_input_size(self):
         return self.__hyperparams['input_size']
     
-    def get_epoch(self):
-        return self.__hyperparams['epoch']
+    def get_epoch(self)->int:
+        return int(self.__hyperparams['epoch'])
     
-    def get_save_epoch(self):
-        return self.__hyperparams['save_epoch']
+    def get_save_epoch(self)->int:
+        return int(self.__hyperparams['save_epoch'])
     
     def get_using_amp(self):
         return self.__hyperparams['using_amp']

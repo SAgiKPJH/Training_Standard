@@ -69,7 +69,7 @@ class Pytorch_TrainingBuilder:
             train_epoch_loss = 0.0
 
             for n_epoch, batch in enumerate(train_data_loader, 1):
-                train_inputs, loss = self.train_step(batch)
+                train_inputs, loss = self._train_step(batch)
 
                 train_epoch_loss += loss.item()
                 if n_epoch % max(1, total_iteration // 10) == 0 or n_epoch == total_iteration:
@@ -105,20 +105,11 @@ class Pytorch_TrainingBuilder:
                 epoch_elapsed_time= time.time() - self.__epoch_start_time,
                 model= self.__model
             )
-            # save_builder.append_train_loss(train_epoch_loss / n_epoch)
-            # save_builder.set_hierarchy_root(f"epoch_{epoch}")
-            # if validation_data_loader:
-            #     save_builder.append_valid_loss(valid_epoch_loss / n_epoch)
-            #     save_builder.save_validateion(epoch, label_list, predict_list)
-            
-            # epoch_valid_loss_mean = valid_epoch_loss/len(validation_data_loader) if validation_data_loader else 0
-            # save_builder.save_training(self.__model, epoch, self.__save_epoch, train_inputs)
-            # save_builder.save_train_valid_csv()
 
         if hook: hook.training_end()
         return self
     
-    def train_step(self, batch):
+    def _train_step(self, batch):
         inputs = batch[0].to(self.__device)
         labels = batch[1].to(self.__device)
         with torch.cuda.amp.autocast(enabled=self.__using_amp):

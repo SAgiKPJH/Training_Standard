@@ -95,22 +95,13 @@ class SaveHook(TrainHook):
 def RecipeRun(**kwargs):
     operation_builder = Operation_Builder(**kwargs).initialize().build()
     
-    hyperparameter_builder = Json_HyperparameterBuilder(
-                                operation_builder.get_json_hyperparameter()
-                             ).initialize().build()
-
-    classcode_builder = DAQ_Classification_ClassCodeBuilder(
-                        ).init_url_info(
-                            operation_channel=operation_builder.get_operation_channel(),
-                            access_token=operation_builder.get_access_token()
+    classcode_builder = DAQ_Classification_ClassCodeBuilder().init_url_info(operation_channel=operation_builder.get_operation_channel(),access_token=operation_builder.get_access_token()
                         ).init_label_data(
                             gt_dataset_id=operation_builder.get_gt_dataset_id()
                         ).build()
     
-    dataset_builder = DAQ_Pytorch_ClassificatoinDatasetBuilder(logger=logger
-                        ).init_url_info(
-                            operation_channel=operation_builder.get_operation_channel(),
-                            access_token=operation_builder.get_access_token()
+    hyperparameter_builder = Json_HyperparameterBuilder(operation_builder.get_json_hyperparameter()).build()
+    dataset_builder = DAQ_Pytorch_ClassificatoinDatasetBuilder(logger=logger).init_url_info(operation_channel=operation_builder.get_operation_channel(),access_token=operation_builder.get_access_token()
                         ).init_dataset_gts(
                             gt_dataset_id=operation_builder.get_gt_dataset_id()
                         ).init_transform(
@@ -133,9 +124,7 @@ def RecipeRun(**kwargs):
 
     try:
         
-        model = Pytorch_InceptionV3(
-                ).init_device(
-                    hyperparameter_builder.get_device()
+        model = Pytorch_InceptionV3().init_device(hyperparameter_builder.get_device()
                 ).init_model(
                     num_classes=classcode_builder.get_class_count()
                 ).get_model()
