@@ -45,7 +45,7 @@ from Builder import Operation_Builder
 from Builder import Json_HyperparameterBuilder
 from Builder import DAQ_Classification_ClassCodeBuilder
 from Builder import DAQ_Pytorch_ClassificatoinDatasetBuilder
-from Builder import Pytorch_InceptionV3 as InceptionModel
+from Builder import Pytorch_InceptionV1 as InceptionModel
 from Builder import Pytorch_TrainingBuilder
 
 from Builder import TrainHook
