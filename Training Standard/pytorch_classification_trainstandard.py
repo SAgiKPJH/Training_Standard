@@ -1,22 +1,72 @@
+##UI{
+##  "Step1": {
+##    "Title": "Set Network",
+##    "Label": "Step 1: Set Network and Using GPU",
+##    "Parameters": {
+##      "SetNetworkName": {
+##         "Type": "select",
+##         "Label": "Network Name",
+##         "Prameter": "hyperparameter.network_name",
+##         "Options": [
+##             {"Label": "resnet18", "Value": "resnet18"},
+##             {"Label": "resnet34", "Value": "resnet34"},
+##             {"Label": "resnet50", "Value": "resnet50"},
+##             {"Label": "efficientnet_b0", "Value": "efficientnet_b0"},
+##             {"Label": "efficientnet_b1", "Value": "efficientnet_b1"},
+##             {"Label": "efficientnet_b2", "Value": "efficientnet_b2"},
+##             {"Label": "efficientnet_b3", "Value": "efficientnet_b3"},
+##             {"Label": "efficientnet_b4", "Value": "efficientnet_b4"},
+##             {"Label": "efficientnet_b5", "Value": "efficientnet_b5"},
+##             {"Label": "efficientnet_b6", "Value": "efficientnet_b6"},
+##             {"Label": "efficientnet_b7", "Value": "efficientnet_b7"},
+##             {"Label": "efficientnet_v2_s", "Value": "efficientnet_v2_s"},
+##             {"Label": "efficientnet_v2_m", "Value": "efficientnet_v2_m"},
+##             {"Label": "efficientnet_v2_l", "Value": "efficientnet_v2_l"},
+##             {"Label": "inceptionv1", "Value": "inceptionv1"},
+##             {"Label": "inceptionv3", "Value": "inceptionv3"},
+##             {"Label": "inceptionv2", "Value": "inceptionv2"},
+##             {"Label": "inceptionv4", "Value": "inceptionv4"}
+##         ]
+##      },
+##      "SetUsingGPU": {
+##        "Type": "checkbox",
+##        "Label": "Using GPU",
+##        "Prameter": "hyperparameter.using_gpu"
+##      }
+##    }
+##  },
+##  "Step2": {
+##    "Title": "Set Hyperparameters",
+##    "Label": "Step 2: Set Hyperparameters",
+##    "Parameters": {
+##      "Epoch": { "Type": "integer", "Label": "Epoch", "Prameter": "hyperparameter.epoch"},
+##      "SaveEpoch": { "Type": "integer", "Label": "Save Epoch", "Prameter": "hyperparameter.save_epoch"},
+##      "BatchSize": { "Type": "integer", "Label": "Batch Size", "Prameter": "hyperparameter.batch_size"},
+##      "LearningRate": { "Type": "float", "Label": "Learning Rate", "Prameter": "hyperparameter.lr"}
+##    }
+##  }
+##}IU
+
 ##!--{"Name":"hyperparameter","Type":"epoch","Key":"epoch","Value":"","Category":""}
 ##!--{"Name":"hyperparameter","Type":"batch_size","Key":"batch_size","Value":"","Category":""}
 ##!--{"Name":"result","Type":"result","Key":"id","Value":"","Category":""}
 ##!--{"Name":"authentication","Type":"system_address","Key":"operation_service_address","Value":"","Category":""}
 ##!--{"Name":"authentication","Type":"access_token","Key":"access_token","Value":"","Category":""}
 ##!--{"Name":"gt_dataset","Type":"gt_dataset","Key":"gt_dataset_id","Value":"","Category":""}
-
 ##$--
+
 parameters = '''{
     "hyperparameter":{
+        "network_name" : "efficientnet_b0",
         "epoch" : 20,
-        "save_epoch" : 1,
-        "batch_size" : 16,
+        "save_epoch" : 10,
+        "batch_size" : 4,
         "lr" : 1e-3,
         "optimizer_name" : "Adam",
         "input_size" : 299,
         "normalize_mean" : 0.5,
         "normalize_stdev" : 0.5,
-        "using_gpu" : true,
+        "using_gpu" : false,
         "using_amp" : true,
         "train_ratio" : 0.8,
         "validation_save_random" : false
@@ -45,7 +95,7 @@ from Builder import Operation_Builder
 from Builder import Json_HyperparameterBuilder
 from Builder import DAQ_Classification_ClassCodeBuilder
 from Builder import DAQ_Pytorch_ClassificatoinDatasetBuilder
-from Builder import Pytorch_InceptionV4 as Model
+from Builder import Pytorch_Classification_Models as Model
 from Builder import Pytorch_TrainingBuilder
 
 from Builder import TrainHook

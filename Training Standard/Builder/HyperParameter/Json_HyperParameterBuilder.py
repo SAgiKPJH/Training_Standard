@@ -2,6 +2,7 @@ import json
 
 parameters = '''{
     "hyperparameter":{
+        "network_name" : "efficientnet_b0",
         "epoch" : 20,
         "save_epoch" : 1,
         "batch_size" : 16,
@@ -64,6 +65,9 @@ class Json_HyperparameterBuilder:
             if key in self.__hyperparams:
                 return self.__hyperparams[key]
         return 0
+    
+    def get_network_name(self):
+        return self.__hyperparams['network_name']
     
     def get_reduce_learning_rate_patience(self):
         keys = ['reduceLRPatience']

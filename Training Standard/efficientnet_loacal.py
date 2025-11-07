@@ -1,5 +1,6 @@
 parameters = '''{
     "hyperparameter":{
+        "network_name" : "efficientnet_b0",
         "epoch" : 5,
         "save_epoch" : 2,
         "batch_size" : 2,
@@ -93,12 +94,13 @@ class SaveHook(TrainHook):
         self.__save_builder.save_file_index()
 
 
-from Builder import Pytorch_InceptionV2 as Model
+from Builder import Pytorch_Efficientnet as Model
 from Builder import Pytorch_TrainingBuilder
 try:
     model = Model().init_device(hyperparameter_builder.get_device()
         ).init_model(
-            num_classes=classcode_builder.get_class_count()
+            num_classes=classcode_builder.get_class_count(),
+            network_name=hyperparameter_builder.get_network_name()
         ).get_model()
     
     training_builder = Pytorch_TrainingBuilder(logger

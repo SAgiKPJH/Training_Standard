@@ -45,7 +45,7 @@ from Builder import Operation_Builder
 from Builder import Json_HyperparameterBuilder
 from Builder import DAQ_Classification_ClassCodeBuilder
 from Builder import DAQ_Pytorch_ClassificatoinDatasetBuilder
-from Builder import Pytorch_InceptionV1 as InceptionModel
+from Builder import Pytorch_InceptionV1 as Model
 from Builder import Pytorch_TrainingBuilder
 
 from Builder import TrainHook
@@ -126,7 +126,7 @@ def RecipeRun(**kwargs):
 
     try:
         
-        model = InceptionModel().init_device(hyperparameter_builder.get_device()
+        model = Model().init_device(hyperparameter_builder.get_device()
                 ).init_model(
                     num_classes=classcode_builder.get_class_count()
                 ).get_model()
