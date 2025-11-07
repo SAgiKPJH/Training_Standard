@@ -79,22 +79,13 @@ class Pytorch_TrainingBuilder:
             
             valid_epoch_loss = 0.0
             if validation_data_loader:
-                predict_list = np.array([])
-                label_list = np.array([])
                 with torch.no_grad():
                     self.__model.eval()
                     for _, valid_batch in enumerate(validation_data_loader, 1):
-
-                        valid_inputs = valid_batch[0].to(self.__device)
-                        valid_labels = valid_batch[1].to(self.__device)
-
-                        with torch.cuda.amp.autocast(enabled=self.__using_amp):
-                            valid_outputs = self.__model(valid_inputs)
-                            valid_loss = self.__criterion(valid_outputs, valid_labels)
+                        
+                        valid_inputs, valid_loss = self._valid_step(valid_batch)
 
                         valid_epoch_loss += valid_loss.item()
-                        predict_list = np.concatenate([predict_list, valid_outputs.argmax(dim=1).cpu().numpy()], 0)
-                        label_list = np.concatenate([label_list, valid_labels.cpu().numpy()], 0)
                     self.__model.train()
 
             if hook: hook.on_epoch_end(
@@ -113,11 +104,28 @@ class Pytorch_TrainingBuilder:
         inputs = batch[0].to(self.__device)
         labels = batch[1].to(self.__device)
         with torch.cuda.amp.autocast(enabled=self.__using_amp):
-            output, *_ = self.__model(inputs)
+            outputs = self.__model(inputs)
+            if isinstance(outputs, tuple):
+                output = outputs[0]
+            else:
+                output = outputs
             loss = self.__criterion(output, labels)
         self.__optimizer.zero_grad()
         loss.backward()
         self.__optimizer.step()
+        return inputs, loss
+
+    def _valid_step(self, batch):
+        inputs = batch[0].to(self.__device)
+        labels = batch[1].to(self.__device)
+
+        with torch.cuda.amp.autocast(enabled=self.__using_amp):
+            outputs = self.__model(inputs)
+            if isinstance(outputs, tuple):
+                valid_outputs = outputs[0]
+            else:
+                valid_outputs = outputs
+            loss = self.__criterion(valid_outputs, labels)
         return inputs, loss
 
     def builder(self):

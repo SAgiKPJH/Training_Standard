@@ -319,7 +319,7 @@ class InceptionV4(nn.Module):
         self.dropout = nn.Dropout(0.2)
         self.fc = nn.Linear(1536, num_classes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.features(x)
         x = self.inception_a(x)
         x = self.reduction_a(x)
@@ -331,10 +331,6 @@ class InceptionV4(nn.Module):
         x = self.dropout(x)
         x = self.fc(x)
 
-        # Return tuple to match InceptionV3 interface (main_output,)
-        # This allows consistent unpacking in training loops
-        if self.training:
-            return x,
         return x
 
 
