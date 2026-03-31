@@ -1,0 +1,4 @@
+{
+  "model_file": "model.pth",
+  "device": "cpu"
+}
