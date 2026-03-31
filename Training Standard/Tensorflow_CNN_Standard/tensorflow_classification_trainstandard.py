@@ -70,7 +70,8 @@ parameters = '''{
         "using_amp" : true,
         "train_ratio" : 0.8,
         "validation_save_random" : false,
-        "debug" : false
+        "debug" : false,
+        "daq_old_path" : false
     },
     "authentication": {
         "operation_service_address": "",
@@ -102,24 +103,38 @@ from Builder import Tensorflow_TrainingBuilder_Debug
 
 from Builder import TrainHook
 class SaveHook(TrainHook):
-    def __init__(self, save_epoch, logger, bucket_url, operation_channel, access_token, chunk_size, label_info=None, etc=None):
+    def __init__(self, save_epoch, logger, bucket_url, operation_channel, access_token, chunk_size, daq_old_path=False, label_info=None, etc=None):
         self.__save_epoch = save_epoch
         self.__loss = None
+        self.__daq_old_path = daq_old_path
 
         from Builder import DAQ_MoritoringBuilder
         self.__monitoring_builder = DAQ_MoritoringBuilder(logger).builder()
 
-        from Builder import DAQ_SaveBuilder
-        self.__save_builder = DAQ_SaveBuilder(
-                ).init_inference_info(
-                    label_info = label_info,
-                    etc=etc
-                ).init_save_url(
-                    bucket_url= bucket_url,
-                    operation_channel= operation_channel,
-                    access_token= access_token,
-                    chunk_size= chunk_size,
-                ).build()
+        if daq_old_path:
+            from Builder import DAQ_SaveBuilder_DAQ_OLD
+            self.__save_builder = DAQ_SaveBuilder_DAQ_OLD(
+                    ).init_inference_info(
+                        label_info = label_info,
+                        etc=etc
+                    ).init_save_url(
+                        bucket_url= bucket_url,
+                        operation_channel= operation_channel,
+                        access_token= access_token,
+                        chunk_size= chunk_size,
+                    ).build()
+        else:
+            from Builder import DAQ_SaveBuilder
+            self.__save_builder = DAQ_SaveBuilder(
+                    ).init_inference_info(
+                        label_info = label_info,
+                        etc=etc
+                    ).init_save_url(
+                        bucket_url= bucket_url,
+                        operation_channel= operation_channel,
+                        access_token= access_token,
+                        chunk_size= chunk_size,
+                    ).build()
 
     def on_epoch_end(self, total_epoch, epoch, train_loss, validation_loss, epoch_elapsed_time, model):
         self.__monitoring_builder.monitoring(total_epoch, epoch, train_loss, validation_loss, epoch_elapsed_time)
@@ -130,15 +145,25 @@ class SaveHook(TrainHook):
             "train_accuracy": 100-train_loss,
             "validation_accuracy": 100-validation_loss if validation_loss is not None else None
         })
-        self.__save_builder.save_csv_metric()
+
+        if self.__daq_old_path:
+            self.__save_builder.save_csv_metric(epoch=epoch)
+        else:
+            self.__save_builder.save_csv_metric()
 
         if epoch % self.__save_epoch == 0:
-            self.__save_builder.save_model(f"{epoch}/model", model=model)
+            if self.__daq_old_path:
+                self.__save_builder.save_model(epoch=epoch, model=model)
+            else:
+                self.__save_builder.save_model(f"{epoch}/model", model=model)
 
         loss = validation_loss if validation_loss is not None else train_loss
         if self.__loss is None or loss < self.__loss:
             self.__loss = loss
-            self.__save_builder.save_model(f"best/model", model=model)
+            if self.__daq_old_path:
+                self.__save_builder.save_model(file_full_path="best/model/model.h5", model=model)
+            else:
+                self.__save_builder.save_model(f"best/model", model=model)
 
     def training_start(self):
         logger.info("Training Started.")
@@ -208,6 +233,7 @@ def RecipeRun(**kwargs):
                     operation_channel=operation_builder.get_operation_channel(),
                     access_token=operation_builder.get_access_token(),
                     chunk_size=operation_builder.get_chunk_size(),
+                    daq_old_path=hyperparameter_builder.get_daq_old_path(),
                     label_info=label_info
                    )
 

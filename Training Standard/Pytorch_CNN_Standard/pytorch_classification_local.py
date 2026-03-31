@@ -13,7 +13,8 @@ parameters = '''{
         "using_amp" : true,
         "train_ratio" : 0.8,
         "validation_save_random" : false,
-        "debug" : false
+        "debug" : false,
+        "daq_old_path" : false
     }
 }'''
 import json
@@ -52,23 +53,34 @@ if dataset_builder.success() is False:
 
 from Builder import TrainHook
 class SaveHook(TrainHook):
-    def __init__(self, save_epoch, logger, save_path, label_info=None, etc=None):
+    def __init__(self, save_epoch, logger, save_path, daq_old_path=False, label_info=None, etc=None):
         self.__save_epoch = save_epoch
         self.__save_path = save_path
         self.__loss = None
+        self.__daq_old_path = daq_old_path
 
         from Builder import DAQ_MoritoringBuilder
         self.__monitoring_builder = DAQ_MoritoringBuilder(logger).builder()
 
-        from Builder import Local_SaveBuilder
-        self.__save_builder = Local_SaveBuilder(
-                ).init_inference_info(
-                    label_info = label_info,
-                    etc=etc
-                ).init_save_url(
-                    save_path=self.__save_path
-                ).build()
-    
+        if daq_old_path:
+            from Builder import Local_SaveBuilder_DAQ_OLD
+            self.__save_builder = Local_SaveBuilder_DAQ_OLD(
+                    ).init_inference_info(
+                        label_info = label_info,
+                        etc=etc
+                    ).init_save_url(
+                        save_path=self.__save_path
+                    ).build()
+        else:
+            from Builder import Local_SaveBuilder
+            self.__save_builder = Local_SaveBuilder(
+                    ).init_inference_info(
+                        label_info = label_info,
+                        etc=etc
+                    ).init_save_url(
+                        save_path=self.__save_path
+                    ).build()
+
     def on_epoch_end(self, total_epoch, epoch, train_loss, validation_loss, epoch_elapsed_time, model):
         self.__monitoring_builder.monitoring(total_epoch, epoch, train_loss, validation_loss, epoch_elapsed_time)
         self.__save_builder.append_metrics({
@@ -78,15 +90,25 @@ class SaveHook(TrainHook):
             "train_accuracy": 100-train_loss,
             "validation_accuracy": 100-validation_loss if validation_loss is not None else None
         })
-        self.__save_builder.save_csv_metric()
+
+        if self.__daq_old_path:
+            self.__save_builder.save_csv_metric(epoch=epoch)
+        else:
+            self.__save_builder.save_csv_metric()
 
         if epoch % self.__save_epoch == 0:
-            self.__save_builder.save_model(f"{epoch}/model.pth", model=model)
+            if self.__daq_old_path:
+                self.__save_builder.save_model(epoch=epoch, model=model)
+            else:
+                self.__save_builder.save_model(f"{epoch}/model.pth", model=model)
 
         loss = validation_loss if validation_loss is not None else train_loss
         if self.__loss is None or loss < self.__loss:
             self.__loss = loss
-            self.__save_builder.save_model(f"best/model.pth", model=model)
+            if self.__daq_old_path:
+                self.__save_builder.save_model(file_full_path="best/model/model.h5", model=model)
+            else:
+                self.__save_builder.save_model(f"best/model.pth", model=model)
 
     def training_start(self):
         logger.info("Training Started.")
@@ -125,6 +147,7 @@ try:
                 save_epoch=hyperparameter_builder.get_save_epoch(),
                 logger=logger,
                 save_path=output,
+                daq_old_path=hyperparameter_builder.get_daq_old_path(),
                 label_info=label_info,
                )
 
