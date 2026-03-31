@@ -29,7 +29,7 @@ class Pytorch_Efficientnet:
         if network_name not in self.__efficientnet_map:
             raise ValueError(f"Unsupported network name: {network_name}. Supported names are: {list(self.__efficientnet_map.keys())}")
 
-        model = self.__efficientnet_map[network_name](num_classes=num_classes, init_weights=False)
+        model = self.__efficientnet_map[network_name](num_classes=num_classes)
         
         self.__model = model
         model.to(self.__device)

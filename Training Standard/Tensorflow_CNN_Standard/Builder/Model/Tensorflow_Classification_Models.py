@@ -43,14 +43,16 @@ class Tensorflow_Classification_Models:
             )
 
         with tf.device(self.__device):
+            inputs = tf.keras.layers.Input(shape=(input_size, input_size, 3))
             base_model = self.__network_map[network_name](
                 include_top=False,
                 weights=None,
                 input_shape=(input_size, input_size, 3),
-                pooling='avg'
             )
-            outputs = tf.keras.layers.Dense(num_classes)(base_model.output)
-            self.__model = tf.keras.Model(inputs=base_model.input, outputs=outputs)
+            x = base_model(inputs)
+            x = tf.keras.layers.GlobalAveragePooling2D()(x)
+            outputs = tf.keras.layers.Dense(num_classes)(x)
+            self.__model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
         return self
 

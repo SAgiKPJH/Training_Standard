@@ -33,10 +33,14 @@ class Pytorch_Classification_Models:
     
     def init_model(self, num_classes, network_name='efficientnet_b0'):
         if network_name not in self.__network_map:
-            raise ValueError(f"Unsupported network name: {network_name}. Supported names are: {list(self.__effic__network_mapientnet_map.keys())}")
+            raise ValueError(f"Unsupported network name: {network_name}. Supported names are: {list(self.__network_map.keys())}")
 
-        model = self.__network_map[network_name](num_classes=num_classes, init_weights=False)
-        
+        # GoogLeNet(inceptionv1)은 init_weights 파라미터 필요
+        if network_name == "inceptionv1":
+            model = self.__network_map[network_name](num_classes=num_classes, init_weights=False)
+        else:
+            model = self.__network_map[network_name](num_classes=num_classes)
+
         self.__model = model
         model.to(self.__device)
         return self

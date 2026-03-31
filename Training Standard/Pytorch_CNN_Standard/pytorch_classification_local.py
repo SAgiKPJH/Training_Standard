@@ -1,7 +1,7 @@
 parameters = '''{
     "hyperparameter":{
-        "network_name" : "efficientnet_b0",
-        "epoch" : 5,
+        "network_name" : "inceptionv3",
+        "epoch" : 20,
         "save_epoch" : 2,
         "batch_size" : 2,
         "lr" : 1e-3,
@@ -9,7 +9,7 @@ parameters = '''{
         "input_size" : 299,
         "normalize_mean" : 0.5,
         "normalize_stdev" : 0.5,
-        "using_gpu" : true,
+        "using_gpu" : false,
         "using_amp" : true,
         "train_ratio" : 0.8,
         "validation_save_random" : false,
@@ -25,8 +25,8 @@ logger = globals().get('JOB_LOGGER', logging.getLogger())
 logger.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-dataset = "D:\\test\\Dataset"
-output = "D:\\test\\Output"
+dataset = "D:\\Code\\Training_Standard\\create_dataset\\dataset"
+output = "D:\\Code\\Training_Standard\\create_dataset\\output"
 
 from Builder import Local_Classification_ClassCodeBuilder
 classcode_builder = Local_Classification_ClassCodeBuilder().init_label_data(dataset_path=dataset).build()

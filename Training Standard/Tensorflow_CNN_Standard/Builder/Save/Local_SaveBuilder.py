@@ -122,6 +122,11 @@ class Local_SaveBuilder:
             self._save_model_with_pickle(model, save_path)
 
     def _save_tensorflow_model(self, model, save_path: str, extension: str):
+        # inference_info를 모델에 내장
+        if self.__inference_info is not None:
+            inference_info_json = json.dumps(self.__inference_info, ensure_ascii=False)
+            model.inference_info = tf.Variable(inference_info_json, trainable=False, dtype=tf.string, name="inference_info")
+
         if extension == '.h5':
             model.save(save_path, save_format='h5')
         elif extension == '.keras':
@@ -131,6 +136,7 @@ class Local_SaveBuilder:
             saved_model_path = save_path.replace('.pth', '')
             model.save(saved_model_path, save_format='tf')
 
+        # 별도 json도 저장 (호환용)
         self._save_inference_info_as_json(save_path)
 
     def _save_model_with_pickle(self, model, save_path: str):
