@@ -57,21 +57,21 @@
 
 parameters = '''{
     "hyperparameter":{
-        "network_name" : "efficientnet_b0",
+        "network_name" : "inceptionv3",
         "epoch" : 20,
-        "save_epoch" : 10,
-        "batch_size" : 4,
+        "save_epoch" : 1,
+        "batch_size" : 16,
         "lr" : 1e-3,
         "optimizer_name" : "Adam",
         "input_size" : 299,
         "normalize_mean" : 0.5,
         "normalize_stdev" : 0.5,
-        "using_gpu" : false,
+        "using_gpu" : true,
         "using_amp" : true,
         "train_ratio" : 0.8,
         "validation_save_random" : false,
         "debug" : false,
-        "daq_old_path" : false
+        "daq_old_path" : true
     },
     "authentication": {
         "operation_service_address": "",
@@ -79,7 +79,7 @@ parameters = '''{
     },
     "result":{
         "id":"",
-        "volume_id":"default" 
+        "volume_id":"default"
     },
     "gt_dataset":{
         "gt_dataset_id" : ""
