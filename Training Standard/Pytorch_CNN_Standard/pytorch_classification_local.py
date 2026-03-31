@@ -12,7 +12,8 @@ parameters = '''{
         "using_gpu" : true,
         "using_amp" : true,
         "train_ratio" : 0.8,
-        "validation_save_random" : false
+        "validation_save_random" : false,
+        "debug" : false
     }
 }'''
 import json
@@ -96,14 +97,16 @@ class SaveHook(TrainHook):
 
 from Builder import Pytorch_Classification_Models as Model
 from Builder import Pytorch_TrainingBuilder
+from Builder import Pytorch_TrainingBuilder_Debug
 try:
     model = Model().init_device(hyperparameter_builder.get_device()
         ).init_model(
             num_classes=classcode_builder.get_class_count(),
             network_name=hyperparameter_builder.get_network_name()
         ).get_model()
-    
-    training_builder = Pytorch_TrainingBuilder(logger
+
+    TrainingBuilder = Pytorch_TrainingBuilder_Debug if hyperparameter_builder.get_debug() else Pytorch_TrainingBuilder
+    training_builder = TrainingBuilder(logger
                         ).initialize(
                             epoch_total=hyperparameter_builder.get_epoch(),
                             device= hyperparameter_builder.get_device(), # model.device

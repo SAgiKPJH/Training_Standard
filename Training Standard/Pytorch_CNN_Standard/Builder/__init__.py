@@ -12,6 +12,7 @@ from .Model.Pytorch_InceptionV4 import Pytorch_InceptionV4
 from .Model.Pytorch_Efficientnet import Pytorch_Efficientnet
 from .Model.Pytorch_Classification_Models import Pytorch_Classification_Models
 from .Train.Pytorch_TrainingBuilder import Pytorch_TrainingBuilder
+from .Train.Pytorch_TrainingBuilder_Debug import Pytorch_TrainingBuilder_Debug
 from .Train.Pytorch_TrainingBuilder import TrainHook
 from .Operation.DAQ_OperationBuilder import Operation_Builder
 from .Monitoring.DAQ_MonitoringBuilder import DAQ_MoritoringBuilder
@@ -31,6 +32,7 @@ __all__ = [
     'Pytorch_InceptionV4',
     'Pytorch_Efficientnet',
     'Pytorch_TrainingBuilder',
+    'Pytorch_TrainingBuilder_Debug',
     'TrainHook',
     'Operation_Builder',
     'DAQ_MonitoringBuilder',

@@ -93,6 +93,9 @@ class Json_HyperparameterBuilder:
     def get_using_gpu(self):
         return self.__hyperparams['using_gpu']
     
+    def get_debug(self):
+        return self.__hyperparams.get('debug', False)
+
     def get_device(self):
         if self.get_using_gpu():
             return 'cuda'

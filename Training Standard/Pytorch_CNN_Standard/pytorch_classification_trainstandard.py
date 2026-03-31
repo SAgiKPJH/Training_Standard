@@ -69,7 +69,8 @@ parameters = '''{
         "using_gpu" : false,
         "using_amp" : true,
         "train_ratio" : 0.8,
-        "validation_save_random" : false
+        "validation_save_random" : false,
+        "debug" : false
     },
     "authentication": {
         "operation_service_address": "",
@@ -97,6 +98,7 @@ from Builder import DAQ_Classification_ClassCodeBuilder
 from Builder import DAQ_Pytorch_ClassificatoinDatasetBuilder
 from Builder import Pytorch_Classification_Models as Model
 from Builder import Pytorch_TrainingBuilder
+from Builder import Pytorch_TrainingBuilder_Debug
 
 from Builder import TrainHook
 class SaveHook(TrainHook):
@@ -180,8 +182,9 @@ def RecipeRun(**kwargs):
                 ).init_model(
                     num_classes=classcode_builder.get_class_count()
                 ).get_model()
-        
-        training_builder = Pytorch_TrainingBuilder(logger
+
+        TrainingBuilder = Pytorch_TrainingBuilder_Debug if hyperparameter_builder.get_debug() else Pytorch_TrainingBuilder
+        training_builder = TrainingBuilder(logger
                            ).initialize(
                                 epoch_total=hyperparameter_builder.get_epoch(),
                                 device= hyperparameter_builder.get_device(), # model.device
