@@ -14,7 +14,8 @@ parameters = '''{
         "train_ratio" : 0.8,
         "validation_save_random" : false,
         "debug" : false,
-        "daq_old_path" : false
+        "daq_old_path" : false,
+        "resume_path" : ""
     }
 }'''
 import json
@@ -96,7 +97,7 @@ class SaveHook(TrainHook):
         else:
             self.__save_builder.save_csv_metric()
 
-        if epoch % self.__save_epoch == 0:
+        if (self.__save_epoch > 0 and epoch % self.__save_epoch == 0) or (self.__save_epoch == 0 and epoch == total_epoch):
             if self.__daq_old_path:
                 self.__save_builder.save_model(epoch=epoch, model=model)
             else:
@@ -126,6 +127,24 @@ try:
             num_classes=classcode_builder.get_class_count(),
             network_name=hyperparameter_builder.get_network_name()
         ).get_model()
+
+    import os, torch
+    resume_path = hyperparameter_builder.get_resume_path()
+    if resume_path:
+        resume_path = os.path.abspath(resume_path) if not os.path.isabs(resume_path) else resume_path
+        if not os.path.exists(resume_path):
+            raise FileNotFoundError(f"Resume path not found: {resume_path}")
+        device = hyperparameter_builder.get_device()
+        try:
+            loaded = torch.jit.load(resume_path, map_location=device)
+            model.load_state_dict(loaded.state_dict())
+        except Exception:
+            state_dict = torch.load(resume_path, map_location=device, weights_only=False)
+            if isinstance(state_dict, dict):
+                model.load_state_dict(state_dict)
+            else:
+                model.load_state_dict(state_dict.state_dict())
+        logger.info(f"Resumed from: {resume_path}")
 
     TrainingBuilder = Pytorch_TrainingBuilder_Debug if hyperparameter_builder.get_debug() else Pytorch_TrainingBuilder
     training_builder = TrainingBuilder(logger

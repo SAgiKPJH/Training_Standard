@@ -97,6 +97,9 @@ class Json_HyperparameterBuilder:
     def get_daq_old_path(self):
         return self.__hyperparams.get('daq_old_path', False)
 
+    def get_resume_path(self):
+        return self.__hyperparams.get('resume_path', '')
+
     def get_device(self):
         if self.get_using_gpu():
             return '/gpu:0'

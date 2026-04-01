@@ -14,7 +14,8 @@ parameters = '''{
         "train_ratio" : 0.8,
         "validation_save_random" : false,
         "debug" : false,
-        "daq_old_path" : false
+        "daq_old_path" : false,
+        "resume_path" : ""
     }
 }'''
 import json
@@ -96,7 +97,7 @@ class SaveHook(TrainHook):
         else:
             self.__save_builder.save_csv_metric()
 
-        if epoch % self.__save_epoch == 0:
+        if (self.__save_epoch > 0 and epoch % self.__save_epoch == 0) or (self.__save_epoch == 0 and epoch == total_epoch):
             if self.__daq_old_path:
                 self.__save_builder.save_model(epoch=epoch, model=model)
             else:
@@ -127,6 +128,19 @@ try:
             network_name=hyperparameter_builder.get_network_name(),
             input_size=hyperparameter_builder.get_input_size()
         ).get_model()
+
+    import os, tensorflow as tf
+    resume_path = hyperparameter_builder.get_resume_path()
+    if resume_path:
+        resume_path = os.path.abspath(resume_path) if not os.path.isabs(resume_path) else resume_path
+        if not os.path.exists(resume_path):
+            raise FileNotFoundError(f"Resume path not found: {resume_path}")
+        try:
+            model.load_weights(resume_path)
+        except Exception:
+            loaded = tf.keras.models.load_model(resume_path)
+            model.set_weights(loaded.get_weights())
+        logger.info(f"Resumed from: {resume_path}")
 
     TrainingBuilder = Tensorflow_TrainingBuilder_Debug if hyperparameter_builder.get_debug() else Tensorflow_TrainingBuilder
     training_builder = TrainingBuilder(logger
