@@ -56,6 +56,7 @@
 ##$--
 
 parameters = '''{
+    "version" : "Tensorflow_CNN_Standard_v1.0.0",
     "hyperparameter":{
         "network_name" : "efficientnet_b0",
         "epoch" : 20,

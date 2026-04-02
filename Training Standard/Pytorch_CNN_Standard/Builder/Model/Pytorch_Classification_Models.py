@@ -31,7 +31,9 @@ class Pytorch_Classification_Models:
         self.__device = 'cuda' if device == 'cuda' else 'cpu'
         return self
     
-    def init_model(self, num_classes, network_name='efficientnet_b0', aux_logits=False):
+    def init_model(self, num_classes, network_name=None, aux_logits=False):
+        if network_name is None:
+            raise ValueError("network_name is required")
         if network_name not in self.__network_map:
             raise ValueError(f"Unsupported network name: {network_name}. Supported names are: {list(self.__network_map.keys())}")
 

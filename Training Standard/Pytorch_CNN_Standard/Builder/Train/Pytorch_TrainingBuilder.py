@@ -24,6 +24,7 @@ class Pytorch_TrainingBuilder:
         self.__epoch_total = epoch_total
         self.__device = device
         self.__using_amp = using_amp
+        self.__scaler = torch.amp.GradScaler(enabled=using_amp)
         return self
         
     def init_model(self, model):
@@ -103,7 +104,7 @@ class Pytorch_TrainingBuilder:
     def _train_step(self, batch):
         inputs = batch[0].to(self.__device)
         labels = batch[1].to(self.__device)
-        with torch.cuda.amp.autocast(enabled=self.__using_amp):
+        with torch.amp.autocast(device_type=self.__device, enabled=self.__using_amp):
             outputs = self.__model(inputs)
             if isinstance(outputs, tuple):
                 output = outputs[0]
@@ -111,15 +112,16 @@ class Pytorch_TrainingBuilder:
                 output = outputs
             loss = self.__criterion(output, labels)
         self.__optimizer.zero_grad()
-        loss.backward()
-        self.__optimizer.step()
+        self.__scaler.scale(loss).backward()
+        self.__scaler.step(self.__optimizer)
+        self.__scaler.update()
         return inputs, loss
 
     def _valid_step(self, batch):
         inputs = batch[0].to(self.__device)
         labels = batch[1].to(self.__device)
 
-        with torch.cuda.amp.autocast(enabled=self.__using_amp):
+        with torch.amp.autocast(device_type=self.__device, enabled=self.__using_amp):
             outputs = self.__model(inputs)
             if isinstance(outputs, tuple):
                 valid_outputs = outputs[0]

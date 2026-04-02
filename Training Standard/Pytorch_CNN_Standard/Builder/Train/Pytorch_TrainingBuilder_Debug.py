@@ -120,6 +120,7 @@ class Pytorch_TrainingBuilder_Debug:
         self.__epoch_total = epoch_total
         self.__device = device
         self.__using_amp = using_amp
+        self.__scaler = torch.amp.GradScaler(enabled=using_amp)
         return self
 
     def init_model(self, model):
@@ -267,7 +268,7 @@ class Pytorch_TrainingBuilder_Debug:
         if do_log:
             param_snapshot = {name: p.data.clone() for name, p in self.__model.named_parameters() if p.requires_grad}
 
-        with torch.cuda.amp.autocast(enabled=self.__using_amp):
+        with torch.amp.autocast(device_type=self.__device, enabled=self.__using_amp):
             outputs = self.__model(inputs)
             output = outputs[0] if isinstance(outputs, tuple) else outputs
 
@@ -290,13 +291,14 @@ class Pytorch_TrainingBuilder_Debug:
             self._log_loss_trend(loss.item())
 
         self.__optimizer.zero_grad()
-        loss.backward()
+        self.__scaler.scale(loss).backward()
 
         # Gradient 검사
         if do_log:
             self._check_gradients()
 
-        self.__optimizer.step()
+        self.__scaler.step(self.__optimizer)
+        self.__scaler.update()
 
         # Weight update 크기 측정
         if do_log and param_snapshot is not None:
@@ -308,7 +310,7 @@ class Pytorch_TrainingBuilder_Debug:
         inputs = batch[0].to(self.__device)
         labels = batch[1].to(self.__device)
 
-        with torch.cuda.amp.autocast(enabled=self.__using_amp):
+        with torch.amp.autocast(device_type=self.__device, enabled=self.__using_amp):
             outputs = self.__model(inputs)
             valid_outputs = outputs[0] if isinstance(outputs, tuple) else outputs
             loss = self.__criterion(valid_outputs, labels)

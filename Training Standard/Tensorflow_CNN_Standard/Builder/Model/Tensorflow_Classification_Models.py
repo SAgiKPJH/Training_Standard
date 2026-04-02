@@ -35,7 +35,9 @@ class Tensorflow_Classification_Models:
             self.__device = '/cpu:0'
         return self
 
-    def init_model(self, num_classes, network_name='efficientnet_b0', input_size=299):
+    def init_model(self, num_classes, network_name=None, input_size=299):
+        if network_name is None:
+            raise ValueError("network_name is required")
         if network_name not in self.__network_map:
             raise ValueError(
                 f"Unsupported network name: {network_name}. "
