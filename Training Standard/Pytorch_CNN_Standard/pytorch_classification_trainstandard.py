@@ -163,7 +163,7 @@ class SaveHook(TrainHook):
         if self.__loss is None or loss < self.__loss:
             self.__loss = loss
             if self.__daq_old_path:
-                self.__save_builder.save_model(file_full_path="best/model/model.h5", model=model)
+                self.__save_builder.save_model(file_full_path="best/model/model.pth", model=model)
             else:
                 self.__save_builder.save_model(f"best/model.pth", model=model)
 

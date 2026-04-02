@@ -24,7 +24,6 @@ class Pytorch_TrainingBuilder:
         self.__epoch_total = epoch_total
         self.__device = device
         self.__using_amp = using_amp
-        self.__scaler = torch.amp.GradScaler(enabled=using_amp)
         return self
         
     def init_model(self, model):
@@ -112,9 +111,8 @@ class Pytorch_TrainingBuilder:
                 output = outputs
             loss = self.__criterion(output, labels)
         self.__optimizer.zero_grad()
-        self.__scaler.scale(loss).backward()
-        self.__scaler.step(self.__optimizer)
-        self.__scaler.update()
+        loss.backward()
+        self.__optimizer.step()
         return inputs, loss
 
     def _valid_step(self, batch):

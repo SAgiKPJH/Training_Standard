@@ -114,16 +114,34 @@ class Local_SaveBuilder_DAQ_OLD:
             origin_mode = model.training
             if origin_mode:
                 model.eval()
+
+            model_script = None
+            # 1) script 시도
             try:
                 model_script = torch.jit.script(model)
-                extra_files = {}
-                if self.__inference_info:
-                    for key, value in self.__inference_info.items():
-                        extra_files[key] = value
-                model_script.save(save_path, _extra_files=extra_files)
             except Exception:
+                pass
+            # 2) trace fallback
+            if model_script is None:
+                try:
+                    device = next(model.parameters()).device
+                    input_size = self._get_input_size_from_inference_info()
+                    dummy_input = torch.randn(1, 3, input_size, input_size).to(device)
+                    model_script = torch.jit.trace(model, dummy_input)
+                except Exception:
+                    pass
+
+            extra_files = {}
+            if self.__inference_info:
+                for key, value in self.__inference_info.items():
+                    extra_files[key] = value
+
+            if model_script is not None:
+                model_script.save(save_path, _extra_files=extra_files)
+            else:
                 torch.save(model.state_dict(), save_path)
                 self._save_inference_info_as_json(save_path)
+
             if origin_mode:
                 model.train()
         else:
@@ -184,6 +202,21 @@ class Local_SaveBuilder_DAQ_OLD:
             import csv
             writer = csv.writer(f)
             writer.writerows(csv_data)
+
+    def _get_input_size_from_inference_info(self) -> int:
+        """inference_info에서 input_size를 추출합니다. 실패 시 기본값 224."""
+        try:
+            if self.__inference_info is not None:
+                label_info = self.__inference_info.get('label_info', '{}')
+                if isinstance(label_info, str):
+                    label_info = json.loads(label_info)
+                inner = label_info.get('inference_info', '{}')
+                if isinstance(inner, str):
+                    inner = json.loads(inner)
+                return int(inner.get('input_size', 224))
+        except Exception:
+            pass
+        return 224
 
     def _register_saved_file(self, path: str, file_type: str = 'file') -> None:
         directory = os.path.dirname(path)

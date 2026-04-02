@@ -194,14 +194,32 @@ class Local_SaveBuilder:
             self._save_pytorch_model_as_state_dict(model, save_path)
 
     def _save_pytorch_model_as_torchscript(self, model, save_path: str):
-        """PyTorch 모델을 TorchScript 형식으로 저장합니다."""
+        """PyTorch 모델을 TorchScript 형식으로 저장합니다. (script → trace → state_dict fallback)"""
         origin_mode = model.training
         if origin_mode:
             model.eval()
 
+        model_script = None
+
+        # 1) torch.jit.script 시도
         try:
             model_script = torch.jit.script(model)
         except Exception:
+            pass
+
+        # 2) script 실패 시 torch.jit.trace 시도
+        if model_script is None:
+            try:
+                device = next(model.parameters()).device
+                # inference_info에서 input_size 추출
+                input_size = self._get_input_size_from_inference_info()
+                dummy_input = torch.randn(1, 3, input_size, input_size).to(device)
+                model_script = torch.jit.trace(model, dummy_input)
+            except Exception:
+                pass
+
+        # 3) 둘 다 실패 시 state_dict fallback
+        if model_script is None:
             self._save_pytorch_model_as_state_dict(model, save_path)
             if origin_mode:
                 model.train()
@@ -224,6 +242,21 @@ class Local_SaveBuilder:
         """기타 모델을 pickle로 저장합니다."""
         with open(save_path, 'wb') as f:
             pickle.dump(model, f)
+
+    def _get_input_size_from_inference_info(self) -> int:
+        """inference_info에서 input_size를 추출합니다. 실패 시 기본값 224."""
+        try:
+            if self.__inference_info is not None:
+                label_info = self.__inference_info.get('label_info', '{}')
+                if isinstance(label_info, str):
+                    label_info = json.loads(label_info)
+                inner = label_info.get('inference_info', '{}')
+                if isinstance(inner, str):
+                    inner = json.loads(inner)
+                return int(inner.get('input_size', 224))
+        except Exception:
+            pass
+        return 224
 
     def _prepare_extra_files(self) -> dict:
         """inference_info를 TorchScript extra_files 형식으로 준비합니다."""

@@ -1,8 +1,5 @@
 import os
-import io
 import json
-import numpy as np
-from urllib.parse import urlparse
 from typing import Dict, Any, Optional
 import mpp
 
@@ -83,11 +80,7 @@ class DAQ_SaveBuilder_DAQ_OLD:
         return self
 
     def save_model(self, file_full_path: str = None, model=None, epoch: int = None):
-        """OLD 방식: epoch_{N}/model/model.h5 경로에 H5 포맷으로 저장
-
-        h5py를 사용하여 모델을 H5 포맷으로 저장하고,
-        inference_info를 extra_info 그룹의 속성에 저장합니다.
-        """
+        """OLD 방식 경로 패턴 + mpp.daq.object_service.upload_model로 저장"""
         if model is None:
             raise ValueError("model must not be None")
 
@@ -98,79 +91,9 @@ class DAQ_SaveBuilder_DAQ_OLD:
                 file_full_path = "model.h5"
 
         save_uri = f"{self.__save_url}/{file_full_path}"
-        self._upload_model_h5(model, save_uri)
+        mpp.daq.object_service.upload_model(model, uri=save_uri, inference_info=self.__inference_info, channel=self.__operation_channel, access_token=self.__access_token, chunk_size=self.__chunk_size)
         self._register_saved_file(file_full_path, file_type='model')
         return self
-
-    def _upload_model_h5(self, model, uri: str):
-        """기존 train_recipe.py의 upload_model 방식으로 H5 저장"""
-        import h5py
-        import torch
-
-        parsed_uri = urlparse(uri)
-        extension = os.path.splitext(parsed_uri.path)[1]
-
-        model_bytes_io = io.BytesIO()
-
-        if extension == ".h5":
-            # Keras/TF 모델인 경우
-            from tensorflow import keras
-            with h5py.File(model_bytes_io, 'w') as h5file:
-                keras.models.save_model(model, h5file, save_format="h5")
-                if self.__inference_info:
-                    inference_info_json = json.dumps(self.__inference_info, ensure_ascii=False)
-                    extra_info = h5file.create_group("extra_info")
-                    extra_info.attrs["inference_info"] = inference_info_json
-        elif extension == ".pth":
-            # PyTorch 모델인 경우
-            origin_mode = model.training
-            if origin_mode:
-                model.eval()
-
-            try:
-                model_script = torch.jit.script(model)
-            except Exception:
-                model_script = model
-
-            if origin_mode:
-                model.train()
-
-            extra_files = {}
-            if self.__inference_info:
-                for key, value in self.__inference_info.items():
-                    extra_files[key] = value
-
-            if hasattr(model_script, 'save_to_buffer'):
-                model_buffer = model_script.save_to_buffer(_extra_files=extra_files)
-                model_bytes_io = io.BytesIO(model_buffer)
-            else:
-                torch.save(model.state_dict(), model_bytes_io)
-        else:
-            raise ValueError(f"Unsupported file type: {extension}")
-
-        parts_scheme = parsed_uri.scheme
-        if parts_scheme.lower() == "object":
-            uri_path, fileinfo = os.path.split(uri)
-            filename, ext = os.path.splitext(fileinfo)
-
-            model_bytes_io.seek(0)
-            model_reader_buffer = io.BufferedReader(model_bytes_io)
-
-            mpp.daq.object_service.upload_object(
-                stream=model_reader_buffer,
-                filename=filename,
-                extension=ext,
-                uri=uri_path,
-                channel=self.__operation_channel,
-                access_token=self.__access_token,
-                chunk_size=self.__chunk_size
-            )
-        else:
-            save_folder = os.path.dirname(uri)
-            if save_folder and not os.path.exists(save_folder):
-                os.makedirs(save_folder)
-            with open(uri, 'wb') as f:
-                f.write(model_bytes_io.getvalue())
 
     def save_file(self, file, file_full_path: str):
         if not isinstance(file_full_path, str):
