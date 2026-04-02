@@ -31,13 +31,14 @@ class Pytorch_Classification_Models:
         self.__device = 'cuda' if device == 'cuda' else 'cpu'
         return self
     
-    def init_model(self, num_classes, network_name='efficientnet_b0'):
+    def init_model(self, num_classes, network_name='efficientnet_b0', aux_logits=False):
         if network_name not in self.__network_map:
             raise ValueError(f"Unsupported network name: {network_name}. Supported names are: {list(self.__network_map.keys())}")
 
-        # GoogLeNet(inceptionv1)은 init_weights 파라미터 필요
         if network_name == "inceptionv1":
             model = self.__network_map[network_name](num_classes=num_classes, init_weights=False)
+        elif network_name == "inceptionv3":
+            model = self.__network_map[network_name](num_classes=num_classes, init_weights=False, aux_logits=aux_logits)
         else:
             model = self.__network_map[network_name](num_classes=num_classes)
 

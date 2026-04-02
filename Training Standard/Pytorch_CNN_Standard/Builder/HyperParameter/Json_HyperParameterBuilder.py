@@ -93,6 +93,9 @@ class Json_HyperparameterBuilder:
     def get_using_gpu(self):
         return self.__hyperparams['using_gpu']
     
+    def get_aux_logits(self):
+        return self.__hyperparams.get('aux_logits', False)
+
     def get_debug(self):
         return self.__hyperparams.get('debug', False)
 

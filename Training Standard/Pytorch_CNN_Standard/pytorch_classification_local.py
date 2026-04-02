@@ -125,7 +125,8 @@ try:
     model = Model().init_device(hyperparameter_builder.get_device()
         ).init_model(
             num_classes=classcode_builder.get_class_count(),
-            network_name=hyperparameter_builder.get_network_name()
+            network_name=hyperparameter_builder.get_network_name(),
+            aux_logits=hyperparameter_builder.get_aux_logits()
         ).get_model()
 
     import os, torch
