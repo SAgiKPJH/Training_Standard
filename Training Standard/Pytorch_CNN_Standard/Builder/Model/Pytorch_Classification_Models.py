@@ -8,6 +8,9 @@ class Pytorch_Classification_Models:
         self.__device = 'cpu'
         self.__model = None
         self.__network_map = {
+            "resnet18": torchvision.models.resnet18,
+            "resnet34": torchvision.models.resnet34,
+            "resnet50": torchvision.models.resnet50,
             "inceptionv1": torchvision.models.googlenet,
             "inceptionv2": InceptionV2,
             "inceptionv3": torchvision.models.inception_v3,
