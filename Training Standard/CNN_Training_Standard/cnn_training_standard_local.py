@@ -1,8 +1,9 @@
 parameters = '''{
-    "version" : "Pytorch_CNN_Standard_v1.0.0",
+    "version" : "CNN_Training_Standard_v1.0.0",
     "hyperparameter":{
+        "framework" : "pytorch",
         "network_name" : "inceptionv3",
-        "epoch" : 20,
+        "epoch" : 5,
         "save_epoch" : 2,
         "batch_size" : 2,
         "lr" : 1e-3,
@@ -15,8 +16,7 @@ parameters = '''{
         "train_ratio" : 0.8,
         "validation_save_random" : false,
         "debug" : false,
-        "daq_old_path" : false,
-        "resume_path" : ""
+        "daq_old_path" : false
     }
 }'''
 import json
@@ -30,14 +30,18 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')
 dataset = "D:\\Code\\Training_Standard\\create_dataset\\dataset"
 output = "D:\\Code\\Training_Standard\\create_dataset\\output"
 
+from Builder import Json_HyperparameterBuilder
+hyperparameter_builder = Json_HyperparameterBuilder(hyperparameter).build()
+framework = hyperparameter_builder.get_framework()
+logger.info(f"Framework: {framework}")
+
 from Builder import Local_Classification_ClassCodeBuilder
 classcode_builder = Local_Classification_ClassCodeBuilder().init_label_data(dataset_path=dataset).build()
 
-from Builder import Json_HyperparameterBuilder
-hyperparameter_builder = Json_HyperparameterBuilder(hyperparameter).build()
+from Builder import get_framework_builders
+Model, LocalDatasetBuilder, TrainingBuilder, TrainingBuilderDebug = get_framework_builders(framework)
 
-from Builder import Local_Pytorch_ClassificationDatasetBuilder
-dataset_builder = Local_Pytorch_ClassificationDatasetBuilder(logger=logger).init_dataset_path(dataset_path=dataset
+dataset_builder = LocalDatasetBuilder(logger=logger).init_dataset_path(dataset_path=dataset
                   ).init_transform(
                       input_size=hyperparameter_builder.get_input_size(),
                       normalize_mean=hyperparameter_builder.get_normalize_mean(),
@@ -98,11 +102,12 @@ class SaveHook(TrainHook):
         else:
             self.__save_builder.save_csv_metric()
 
-        if (self.__save_epoch > 0 and epoch % self.__save_epoch == 0) or (self.__save_epoch == 0 and epoch == total_epoch):
+        if epoch % self.__save_epoch == 0:
             if self.__daq_old_path:
                 self.__save_builder.save_model(epoch=epoch, model=model)
             else:
-                self.__save_builder.save_model(f"{epoch}/model.pth", model=model)
+                ext = ".pth" if framework == "pytorch" else ""
+                self.__save_builder.save_model(f"{epoch}/model{ext}", model=model)
 
         loss = validation_loss if validation_loss is not None else train_loss
         if self.__loss is None or loss < self.__loss:
@@ -110,7 +115,8 @@ class SaveHook(TrainHook):
             if self.__daq_old_path:
                 self.__save_builder.save_model(file_full_path="best/model/model.h5", model=model)
             else:
-                self.__save_builder.save_model(f"best/model.pth", model=model)
+                ext = ".pth" if framework == "pytorch" else ""
+                self.__save_builder.save_model(f"best/model{ext}", model=model)
 
     def training_start(self):
         logger.info("Training Started.")
@@ -119,39 +125,25 @@ class SaveHook(TrainHook):
         self.__save_builder.save_file_index()
 
 
-from Builder import Pytorch_Classification_Models as Model
-from Builder import Pytorch_TrainingBuilder
-from Builder import Pytorch_TrainingBuilder_Debug
 try:
-    model = Model().init_device(hyperparameter_builder.get_device()
-        ).init_model(
+    model_builder = Model().init_device(hyperparameter_builder.get_device())
+    if framework == "tensorflow":
+        model = model_builder.init_model(
+            num_classes=classcode_builder.get_class_count(),
+            network_name=hyperparameter_builder.get_network_name(),
+            input_size=hyperparameter_builder.get_input_size()
+        ).get_model()
+    else:
+        model = model_builder.init_model(
             num_classes=classcode_builder.get_class_count(),
             network_name=hyperparameter_builder.get_network_name()
         ).get_model()
 
-    import os, torch
-    resume_path = hyperparameter_builder.get_resume_path()
-    if resume_path:
-        resume_path = os.path.abspath(resume_path) if not os.path.isabs(resume_path) else resume_path
-        if not os.path.exists(resume_path):
-            raise FileNotFoundError(f"Resume path not found: {resume_path}")
-        device = hyperparameter_builder.get_device()
-        try:
-            loaded = torch.jit.load(resume_path, map_location=device)
-            model.load_state_dict(loaded.state_dict())
-        except Exception:
-            state_dict = torch.load(resume_path, map_location=device, weights_only=False)
-            if isinstance(state_dict, dict):
-                model.load_state_dict(state_dict)
-            else:
-                model.load_state_dict(state_dict.state_dict())
-        logger.info(f"Resumed from: {resume_path}")
-
-    TrainingBuilder = Pytorch_TrainingBuilder_Debug if hyperparameter_builder.get_debug() else Pytorch_TrainingBuilder
-    training_builder = TrainingBuilder(logger
+    SelectedTrainingBuilder = TrainingBuilderDebug if hyperparameter_builder.get_debug() else TrainingBuilder
+    training_builder = SelectedTrainingBuilder(logger
                         ).initialize(
                             epoch_total=hyperparameter_builder.get_epoch(),
-                            device= hyperparameter_builder.get_device(), # model.device
+                            device=hyperparameter_builder.get_device(),
                             using_amp=hyperparameter_builder.get_using_amp(),
                         ).init_model(
                             model=model
