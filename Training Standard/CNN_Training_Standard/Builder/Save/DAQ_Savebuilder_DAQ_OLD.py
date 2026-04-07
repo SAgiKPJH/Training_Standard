@@ -90,6 +90,10 @@ class DAQ_SaveBuilder_DAQ_OLD:
             else:
                 file_full_path = "model.h5"
 
+        # PyTorch 모델이면 확장자를 .pth로 변경 (.h5는 Keras 전용)
+        if hasattr(model, 'state_dict') and file_full_path.endswith('.h5'):
+            file_full_path = file_full_path[:-3] + '.pth'
+
         save_uri = f"{self.__save_url}/{file_full_path}"
         mpp.daq.object_service.upload_model(model, uri=save_uri, inference_info=self.__inference_info, channel=self.__operation_channel, access_token=self.__access_token, chunk_size=self.__chunk_size)
         self._register_saved_file(file_full_path, file_type='model')
