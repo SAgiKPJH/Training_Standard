@@ -26,7 +26,7 @@ class Pytorch_TrainingBuilder:
         self.__using_amp = using_amp
         try:
             self.__scaler = torch.amp.GradScaler(self.__device, enabled=using_amp)
-        except TypeError:
+        except (TypeError, AttributeError):
             self.__scaler = torch.cuda.amp.GradScaler(enabled=using_amp)
         return self
         
