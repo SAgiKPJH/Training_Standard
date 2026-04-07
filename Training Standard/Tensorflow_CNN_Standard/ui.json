@@ -1,49 +1,49 @@
 {
   "Step1": {
-    "Title": "Set Network",
-    "Label": "Step 1: Set Network and Using GPU",
+    "Title": "Set Framework, Network and Using GPU",
+    "Label": "Step 1: Set Network",
     "Parameters": {
       "SetNetworkName": {
          "Type": "select",
          "Label": "Network Name",
          "Prameter": "hyperparameter.network_name",
          "Options": [
-             {"Label": "[ResNet] resnet50", "Value": "resnet50"},
-             {"Label": "[ResNet] resnet101", "Value": "resnet101"},
-             {"Label": "[ResNet] resnet152", "Value": "resnet152"},
-             {"Label": "[ResNet V2] resnet50_v2", "Value": "resnet50_v2"},
-             {"Label": "[ResNet V2] resnet101_v2", "Value": "resnet101_v2"},
-             {"Label": "[ResNet V2] resnet152_v2", "Value": "resnet152_v2"},
-             {"Label": "[Inception] inceptionv3", "Value": "inceptionv3"},
-             {"Label": "[Inception] inception_resnet_v2", "Value": "inception_resnet_v2"},
-             {"Label": "[EfficientNet] efficientnet_b0", "Value": "efficientnet_b0"},
-             {"Label": "[EfficientNet] efficientnet_b1", "Value": "efficientnet_b1"},
-             {"Label": "[EfficientNet] efficientnet_b2", "Value": "efficientnet_b2"},
-             {"Label": "[EfficientNet] efficientnet_b3", "Value": "efficientnet_b3"},
-             {"Label": "[EfficientNet] efficientnet_b4", "Value": "efficientnet_b4"},
-             {"Label": "[EfficientNet] efficientnet_b5", "Value": "efficientnet_b5"},
-             {"Label": "[EfficientNet] efficientnet_b6", "Value": "efficientnet_b6"},
-             {"Label": "[EfficientNet] efficientnet_b7", "Value": "efficientnet_b7"},
-             {"Label": "[EfficientNet] efficientnet_v2_s", "Value": "efficientnet_v2_s"},
-             {"Label": "[EfficientNet] efficientnet_v2_m", "Value": "efficientnet_v2_m"},
-             {"Label": "[EfficientNet] efficientnet_v2_l", "Value": "efficientnet_v2_l"},
-             {"Label": "[VGG] vgg16", "Value": "vgg16"},
-             {"Label": "[VGG] vgg19", "Value": "vgg19"},
-             {"Label": "[DenseNet] densenet121", "Value": "densenet121"},
-             {"Label": "[DenseNet] densenet169", "Value": "densenet169"},
-             {"Label": "[DenseNet] densenet201", "Value": "densenet201"},
-             {"Label": "[MobileNet] mobilenet", "Value": "mobilenet"},
-             {"Label": "[MobileNet] mobilenet_v2", "Value": "mobilenet_v2"},
-             {"Label": "[MobileNet] mobilenet_v3_small", "Value": "mobilenet_v3_small"},
-             {"Label": "[MobileNet] mobilenet_v3_large", "Value": "mobilenet_v3_large"},
-             {"Label": "[NASNet] nasnet_mobile", "Value": "nasnet_mobile"},
-             {"Label": "[NASNet] nasnet_large", "Value": "nasnet_large"},
-             {"Label": "[Xception] xception", "Value": "xception"},
-             {"Label": "[ConvNeXt] convnext_tiny", "Value": "convnext_tiny"},
-             {"Label": "[ConvNeXt] convnext_small", "Value": "convnext_small"},
-             {"Label": "[ConvNeXt] convnext_base", "Value": "convnext_base"},
-             {"Label": "[ConvNeXt] convnext_large", "Value": "convnext_large"},
-             {"Label": "[ConvNeXt] convnext_xlarge", "Value": "convnext_xlarge"}
+             {"Label": "[ResNet] resnet50", "Value": "resnet50", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[ResNet] resnet101", "Value": "resnet101", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[ResNet] resnet152", "Value": "resnet152", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[ResNet V2] resnet50_v2", "Value": "resnet50_v2", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[ResNet V2] resnet101_v2", "Value": "resnet101_v2", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[ResNet V2] resnet152_v2", "Value": "resnet152_v2", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[Inception] inceptionv3", "Value": "inceptionv3", "DefaultValues": {"hyperparameter.input_size": 299}},
+             {"Label": "[Inception] inception_resnet_v2", "Value": "inception_resnet_v2", "DefaultValues": {"hyperparameter.input_size": 299}},
+             {"Label": "[EfficientNet] efficientnet_b0", "Value": "efficientnet_b0", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[EfficientNet] efficientnet_b1", "Value": "efficientnet_b1", "DefaultValues": {"hyperparameter.input_size": 240}},
+             {"Label": "[EfficientNet] efficientnet_b2", "Value": "efficientnet_b2", "DefaultValues": {"hyperparameter.input_size": 260}},
+             {"Label": "[EfficientNet] efficientnet_b3", "Value": "efficientnet_b3", "DefaultValues": {"hyperparameter.input_size": 300}},
+             {"Label": "[EfficientNet] efficientnet_b4", "Value": "efficientnet_b4", "DefaultValues": {"hyperparameter.input_size": 380}},
+             {"Label": "[EfficientNet] efficientnet_b5", "Value": "efficientnet_b5", "DefaultValues": {"hyperparameter.input_size": 456}},
+             {"Label": "[EfficientNet] efficientnet_b6", "Value": "efficientnet_b6", "DefaultValues": {"hyperparameter.input_size": 528}},
+             {"Label": "[EfficientNet] efficientnet_b7", "Value": "efficientnet_b7", "DefaultValues": {"hyperparameter.input_size": 600}},
+             {"Label": "[EfficientNet] efficientnet_v2_s", "Value": "efficientnet_v2_s", "DefaultValues": {"hyperparameter.input_size": 384}},
+             {"Label": "[EfficientNet] efficientnet_v2_m", "Value": "efficientnet_v2_m", "DefaultValues": {"hyperparameter.input_size": 480}},
+             {"Label": "[EfficientNet] efficientnet_v2_l", "Value": "efficientnet_v2_l", "DefaultValues": {"hyperparameter.input_size": 480}},
+             {"Label": "[VGG] vgg16", "Value": "vgg16", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[VGG] vgg19", "Value": "vgg19", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[DenseNet] densenet121", "Value": "densenet121", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[DenseNet] densenet169", "Value": "densenet169", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[DenseNet] densenet201", "Value": "densenet201", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[MobileNet] mobilenet", "Value": "mobilenet", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[MobileNet] mobilenet_v2", "Value": "mobilenet_v2", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[MobileNet] mobilenet_v3_small", "Value": "mobilenet_v3_small", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[MobileNet] mobilenet_v3_large", "Value": "mobilenet_v3_large", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[NASNet] nasnet_mobile", "Value": "nasnet_mobile", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[NASNet] nasnet_large", "Value": "nasnet_large", "DefaultValues": {"hyperparameter.input_size": 331}},
+             {"Label": "[Xception] xception", "Value": "xception", "DefaultValues": {"hyperparameter.input_size": 299}},
+             {"Label": "[ConvNeXt] convnext_tiny", "Value": "convnext_tiny", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[ConvNeXt] convnext_small", "Value": "convnext_small", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[ConvNeXt] convnext_base", "Value": "convnext_base", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[ConvNeXt] convnext_large", "Value": "convnext_large", "DefaultValues": {"hyperparameter.input_size": 224}},
+             {"Label": "[ConvNeXt] convnext_xlarge", "Value": "convnext_xlarge", "DefaultValues": {"hyperparameter.input_size": 224}}
          ]
       },
       "SetUsingGPU": {
@@ -60,7 +60,45 @@
       "Epoch": { "Type": "integer", "Label": "Epoch", "Prameter": "hyperparameter.epoch"},
       "SaveEpoch": { "Type": "integer", "Label": "Save Epoch", "Prameter": "hyperparameter.save_epoch"},
       "BatchSize": { "Type": "integer", "Label": "Batch Size", "Prameter": "hyperparameter.batch_size"},
-      "LearningRate": { "Type": "float", "Label": "Learning Rate", "Prameter": "hyperparameter.lr"}
+      "LearningRate": { "Type": "float", "Label": "Learning Rate", "Prameter": "hyperparameter.lr"},
+      "InputSize": { "Type": "integer", "Label": "Input Size", "Prameter": "hyperparameter.input_size"}
+    }
+  },
+  "Step3": {
+    "Title": "Set Optimizer and Loss",
+    "Label": "Step 3: Set Optimizer and Loss",
+    "Collapsed": true,
+    "Parameters": {
+      "Optimizer": {
+        "Type": "select",
+        "Label": "Optimizer",
+        "Prameter": "hyperparameter.optimizer_name",
+        "Options": [
+          {"Label": "Adam", "Value": "Adam"},
+          {"Label": "SGD", "Value": "SGD"},
+          {"Label": "Adagrad", "Value": "Adagrad"},
+          {"Label": "AdamW", "Value": "AdamW"},
+          {"Label": "RMSprop", "Value": "RMSprop"}
+        ]
+      },
+      "Loss": {
+        "Type": "select",
+        "Label": "Loss Function",
+        "Prameter": "hyperparameter.criterion",
+        "Options": [
+          {"Label": "CrossEntropyLoss", "Value": "CrossEntropyLoss"},
+          {"Label": "BCEWithLogitsLoss", "Value": "BCEWithLogitsLoss"},
+          {"Label": "FocalLoss", "Value": "FocalLoss"},
+          {"Label": "MSELoss", "Value": "MSELoss"},
+          {"Label": "L1Loss", "Value": "L1Loss"},
+          {"Label": "SmoothL1Loss", "Value": "SmoothL1Loss"},
+          {"Label": "NLLLoss", "Value": "NLLLoss"},
+          {"Label": "KLDivLoss", "Value": "KLDivLoss"},
+          {"Label": "HuberLoss", "Value": "HuberLoss"},
+          {"Label": "CosineEmbeddingLoss", "Value": "CosineEmbeddingLoss"},
+          {"Label": "LabelSmoothingCrossEntropy", "Value": "LabelSmoothingCrossEntropy"}
+        ]
+      }
     }
   }
 }

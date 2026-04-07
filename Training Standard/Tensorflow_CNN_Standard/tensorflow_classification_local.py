@@ -7,6 +7,7 @@ parameters = '''{
         "batch_size" : 2,
         "lr" : 1e-3,
         "optimizer_name" : "Adam",
+        "criterion" : "CrossEntropyLoss",
         "input_size" : 299,
         "normalize_mean" : 0.5,
         "normalize_stdev" : 0.5,
@@ -58,7 +59,8 @@ class SaveHook(TrainHook):
     def __init__(self, save_epoch, logger, save_path, daq_old_path=False, label_info=None, etc=None):
         self.__save_epoch = save_epoch
         self.__save_path = save_path
-        self.__loss = None
+        self.__best_loss = None
+        self.__best_acc = None
         self.__daq_old_path = daq_old_path
 
         from Builder import DAQ_MoritoringBuilder
@@ -104,14 +106,25 @@ class SaveHook(TrainHook):
             else:
                 self.__save_builder.save_model(f"{epoch}/model", model=model)
 
+        # Best loss 모델 저장
         loss = validation_loss if validation_loss is not None else train_loss
-        if self.__loss is None or loss < self.__loss:
-            self.__loss = loss
-            logger.info(f"  ★ Best model updated (loss: {loss:.6f})")
+        if self.__best_loss is None or loss < self.__best_loss:
+            self.__best_loss = loss
+            logger.info(f"  ★ Best loss model updated (loss: {loss:.6f})")
             if self.__daq_old_path:
-                self.__save_builder.save_model(file_full_path="best/model/model.h5", model=model)
+                self.__save_builder.save_model(file_full_path="best_loss/model/model.h5", model=model)
             else:
-                self.__save_builder.save_model(f"best/model", model=model)
+                self.__save_builder.save_model(f"best_loss/model", model=model)
+
+        # Best accuracy 모델 저장
+        acc = (100 - validation_loss) if validation_loss is not None else (100 - train_loss)
+        if self.__best_acc is None or acc > self.__best_acc:
+            self.__best_acc = acc
+            logger.info(f"  ★ Best acc model updated (acc: {acc:.2f}%)")
+            if self.__daq_old_path:
+                self.__save_builder.save_model(file_full_path="best_acc/model/model.h5", model=model)
+            else:
+                self.__save_builder.save_model(f"best_acc/model", model=model)
 
     def training_start(self):
         logger.info("Training Started.")
