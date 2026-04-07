@@ -1,0 +1,66 @@
+{
+  "Step1": {
+    "Title": "Set Network",
+    "Label": "Step 1: Set Network and Using GPU",
+    "Parameters": {
+      "SetNetworkName": {
+         "Type": "select",
+         "Label": "Network Name",
+         "Prameter": "hyperparameter.network_name",
+         "Options": [
+             {"Label": "[ResNet] resnet50", "Value": "resnet50"},
+             {"Label": "[ResNet] resnet101", "Value": "resnet101"},
+             {"Label": "[ResNet] resnet152", "Value": "resnet152"},
+             {"Label": "[ResNet V2] resnet50_v2", "Value": "resnet50_v2"},
+             {"Label": "[ResNet V2] resnet101_v2", "Value": "resnet101_v2"},
+             {"Label": "[ResNet V2] resnet152_v2", "Value": "resnet152_v2"},
+             {"Label": "[Inception] inceptionv3", "Value": "inceptionv3"},
+             {"Label": "[Inception] inception_resnet_v2", "Value": "inception_resnet_v2"},
+             {"Label": "[EfficientNet] efficientnet_b0", "Value": "efficientnet_b0"},
+             {"Label": "[EfficientNet] efficientnet_b1", "Value": "efficientnet_b1"},
+             {"Label": "[EfficientNet] efficientnet_b2", "Value": "efficientnet_b2"},
+             {"Label": "[EfficientNet] efficientnet_b3", "Value": "efficientnet_b3"},
+             {"Label": "[EfficientNet] efficientnet_b4", "Value": "efficientnet_b4"},
+             {"Label": "[EfficientNet] efficientnet_b5", "Value": "efficientnet_b5"},
+             {"Label": "[EfficientNet] efficientnet_b6", "Value": "efficientnet_b6"},
+             {"Label": "[EfficientNet] efficientnet_b7", "Value": "efficientnet_b7"},
+             {"Label": "[EfficientNet] efficientnet_v2_s", "Value": "efficientnet_v2_s"},
+             {"Label": "[EfficientNet] efficientnet_v2_m", "Value": "efficientnet_v2_m"},
+             {"Label": "[EfficientNet] efficientnet_v2_l", "Value": "efficientnet_v2_l"},
+             {"Label": "[VGG] vgg16", "Value": "vgg16"},
+             {"Label": "[VGG] vgg19", "Value": "vgg19"},
+             {"Label": "[DenseNet] densenet121", "Value": "densenet121"},
+             {"Label": "[DenseNet] densenet169", "Value": "densenet169"},
+             {"Label": "[DenseNet] densenet201", "Value": "densenet201"},
+             {"Label": "[MobileNet] mobilenet", "Value": "mobilenet"},
+             {"Label": "[MobileNet] mobilenet_v2", "Value": "mobilenet_v2"},
+             {"Label": "[MobileNet] mobilenet_v3_small", "Value": "mobilenet_v3_small"},
+             {"Label": "[MobileNet] mobilenet_v3_large", "Value": "mobilenet_v3_large"},
+             {"Label": "[NASNet] nasnet_mobile", "Value": "nasnet_mobile"},
+             {"Label": "[NASNet] nasnet_large", "Value": "nasnet_large"},
+             {"Label": "[Xception] xception", "Value": "xception"},
+             {"Label": "[ConvNeXt] convnext_tiny", "Value": "convnext_tiny"},
+             {"Label": "[ConvNeXt] convnext_small", "Value": "convnext_small"},
+             {"Label": "[ConvNeXt] convnext_base", "Value": "convnext_base"},
+             {"Label": "[ConvNeXt] convnext_large", "Value": "convnext_large"},
+             {"Label": "[ConvNeXt] convnext_xlarge", "Value": "convnext_xlarge"}
+         ]
+      },
+      "SetUsingGPU": {
+        "Type": "checkbox",
+        "Label": "Using GPU",
+        "Prameter": "hyperparameter.using_gpu"
+      }
+    }
+  },
+  "Step2": {
+    "Title": "Set Hyperparameters",
+    "Label": "Step 2: Set Hyperparameters",
+    "Parameters": {
+      "Epoch": { "Type": "integer", "Label": "Epoch", "Prameter": "hyperparameter.epoch"},
+      "SaveEpoch": { "Type": "integer", "Label": "Save Epoch", "Prameter": "hyperparameter.save_epoch"},
+      "BatchSize": { "Type": "integer", "Label": "Batch Size", "Prameter": "hyperparameter.batch_size"},
+      "LearningRate": { "Type": "float", "Label": "Learning Rate", "Prameter": "hyperparameter.lr"}
+    }
+  }
+}

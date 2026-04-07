@@ -136,6 +136,9 @@ class DAQ_Tensorflow_ClassificationDatasetBuilder:
 
                 uri = f"dataset:///?image_id={image_id}"
                 image = mpp.daq.intel64.load(uri, False, channel=self.__operation_channel, access_token=self.__access_token)
+                if image is None or (hasattr(image, 'size') and image.size == 0):
+                    if self.__logger: self.__logger.warning(f"[{i}] Image load failed, skipping: image_id={image_id}")
+                    continue
                 download_path = os.path.join(local_download_path, f"{image_id}.png")
                 mpp.intel64.save(image, download_path)
 
