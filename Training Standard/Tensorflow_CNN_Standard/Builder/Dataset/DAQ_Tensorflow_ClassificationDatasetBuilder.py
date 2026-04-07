@@ -61,10 +61,11 @@ class DAQ_Tensorflow_ClassificationDatasetBuilder:
         self.__classification_gts = response.classification_gts
         return self
 
-    def init_transform(self, input_size, normalize_mean, normalize_stdev):
+    def init_transform(self, input_size, normalize_mean, normalize_stdev, augmentation=None):
         self.__input_size = input_size
         self.__normalize_mean = normalize_mean
         self.__normalize_stdev = normalize_stdev
+        self.__augmentation = augmentation or {}
         return self
 
     def _preprocess_image(self, image_path, label):
