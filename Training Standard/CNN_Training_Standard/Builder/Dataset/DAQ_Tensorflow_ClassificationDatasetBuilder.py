@@ -18,7 +18,9 @@ class DAQ_Tensorflow_ClassificationDatasetBuilder:
         self.__access_token = None
         self.__logger = logger
 
-        self.__local_download_path = os.path.join(f"/temp/{uuid.uuid4()}")
+        import sys
+        _main_dir = os.path.dirname(os.path.abspath(sys.modules['__main__'].__file__))
+        self.__local_download_path = os.path.join(_main_dir, "temp", str(uuid.uuid4()))
 
         self.__classification_gts = None
         self.__train_data_loader = None

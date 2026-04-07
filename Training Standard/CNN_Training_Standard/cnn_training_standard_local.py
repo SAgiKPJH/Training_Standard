@@ -1,5 +1,5 @@
 parameters = '''{
-    "version" : "CNN_Training_Standard_v1.0.0",
+    "version" : "CNN_Training_Standard_v1.0.2",
     "hyperparameter":{
         "framework" : "pytorch",
         "network_name" : "inceptionv3",
