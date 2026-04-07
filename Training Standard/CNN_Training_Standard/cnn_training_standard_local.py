@@ -112,6 +112,7 @@ class SaveHook(TrainHook):
         loss = validation_loss if validation_loss is not None else train_loss
         if self.__loss is None or loss < self.__loss:
             self.__loss = loss
+            logger.info(f"  ★ Best model updated (loss: {loss:.6f})")
             if self.__daq_old_path:
                 self.__save_builder.save_model(file_full_path="best/model/model.h5", model=model)
             else:
