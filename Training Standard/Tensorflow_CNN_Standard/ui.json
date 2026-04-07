@@ -60,14 +60,13 @@
       "Epoch": { "Type": "integer", "Label": "Epoch", "Prameter": "hyperparameter.epoch"},
       "SaveEpoch": { "Type": "integer", "Label": "Save Epoch", "Prameter": "hyperparameter.save_epoch"},
       "BatchSize": { "Type": "integer", "Label": "Batch Size", "Prameter": "hyperparameter.batch_size"},
-      "LearningRate": { "Type": "float", "Label": "Learning Rate", "Prameter": "hyperparameter.lr"},
-      "InputSize": { "Type": "integer", "Label": "Input Size", "Prameter": "hyperparameter.input_size"}
+      "LearningRate": { "Type": "float", "Label": "Learning Rate", "Prameter": "hyperparameter.lr"}
     }
   },
   "Step3": {
     "Title": "Set Optimizer and Loss",
     "Label": "Step 3: Set Optimizer and Loss",
-    "Collapsed": true,
+
     "Parameters": {
       "Optimizer": {
         "Type": "select",
@@ -98,6 +97,38 @@
           {"Label": "CosineEmbeddingLoss", "Value": "CosineEmbeddingLoss"},
           {"Label": "LabelSmoothingCrossEntropy", "Value": "LabelSmoothingCrossEntropy"}
         ]
+      }
+    }
+  },
+  "Step4": {
+    "Title": "Data Augmentation",
+    "Label": "Step 4: Data Augmentation",
+    "Parameters": {
+      "HorizontalFlip": {
+        "Type": "checkbox",
+        "Label": "Horizontal Flip",
+        "Prameter": "hyperparameter.augmentation.horizontal_flip"
+      },
+      "VerticalFlip": {
+        "Type": "checkbox",
+        "Label": "Vertical Flip",
+        "Prameter": "hyperparameter.augmentation.vertical_flip"
+      },
+      "_collapsed": {
+        "Rotation": { "Type": "float", "Label": "Rotation (degrees, 0=off)", "Prameter": "hyperparameter.augmentation.rotation" },
+        "Brightness": { "Type": "float", "Label": "Brightness (0=off, e.g. 0.2)", "Prameter": "hyperparameter.augmentation.brightness" },
+        "Contrast": { "Type": "float", "Label": "Contrast (0=off, e.g. 0.2)", "Prameter": "hyperparameter.augmentation.contrast" },
+        "Saturation": { "Type": "float", "Label": "Saturation (0=off, e.g. 0.2)", "Prameter": "hyperparameter.augmentation.saturation" },
+        "Hue": { "Type": "float", "Label": "Hue (0=off, e.g. 0.1)", "Prameter": "hyperparameter.augmentation.hue" },
+        "GaussianBlur": { "Type": "float", "Label": "Gaussian Blur (sigma, 0=off)", "Prameter": "hyperparameter.augmentation.gaussian_blur" },
+        "RandomErasing": { "Type": "float", "Label": "Random Erasing (probability, 0=off)", "Prameter": "hyperparameter.augmentation.random_erasing" },
+        "RandomAffine": { "Type": "float", "Label": "Random Affine (degrees, 0=off)", "Prameter": "hyperparameter.augmentation.random_affine" },
+        "RandomPerspective": { "Type": "float", "Label": "Random Perspective (distortion, 0=off)", "Prameter": "hyperparameter.augmentation.random_perspective" },
+        "RandomGrayscale": { "Type": "float", "Label": "Random Grayscale (probability, 0=off)", "Prameter": "hyperparameter.augmentation.random_grayscale" },
+        "ShearRange": { "Type": "float", "Label": "Shear Range (0=off, e.g. 0.2)", "Prameter": "hyperparameter.augmentation.shear_range" },
+        "ZoomRange": { "Type": "float", "Label": "Zoom Range (0=off, e.g. 0.2)", "Prameter": "hyperparameter.augmentation.zoom_range" },
+        "WidthShift": { "Type": "float", "Label": "Width Shift (0=off, e.g. 0.1)", "Prameter": "hyperparameter.augmentation.width_shift" },
+        "HeightShift": { "Type": "float", "Label": "Height Shift (0=off, e.g. 0.1)", "Prameter": "hyperparameter.augmentation.height_shift" }
       }
     }
   }

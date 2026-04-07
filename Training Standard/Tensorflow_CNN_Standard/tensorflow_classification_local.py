@@ -42,7 +42,8 @@ dataset_builder = Local_Tensorflow_ClassificationDatasetBuilder(logger=logger).i
                   ).init_transform(
                       input_size=hyperparameter_builder.get_input_size(),
                       normalize_mean=hyperparameter_builder.get_normalize_mean(),
-                      normalize_stdev=hyperparameter_builder.get_normalize_stdev()
+                      normalize_stdev=hyperparameter_builder.get_normalize_stdev(),
+                      augmentation=hyperparameter_builder.get_augmentation()
                   ).create_train_dataset(
                       train_ratio=hyperparameter_builder.get_train_ratio(),
                       batch_size=hyperparameter_builder.get_batch_size(),

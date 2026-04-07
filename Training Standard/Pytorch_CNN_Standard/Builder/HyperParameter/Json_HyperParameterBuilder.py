@@ -103,6 +103,9 @@ class Json_HyperparameterBuilder:
     def get_resume_path(self):
         return self.__hyperparams.get('resume_path', '')
 
+    def get_augmentation(self):
+        return self.__hyperparams.get('augmentation', {})
+
     def get_device(self):
         if self.get_using_gpu():
             return 'cuda'

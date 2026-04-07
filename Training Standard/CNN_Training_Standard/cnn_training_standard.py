@@ -174,7 +174,8 @@ def RecipeRun(**kwargs):
     ).init_transform(
         input_size=hyperparameter_builder.get_input_size(),
         normalize_mean=hyperparameter_builder.get_normalize_mean(),
-        normalize_stdev=hyperparameter_builder.get_normalize_stdev()
+        normalize_stdev=hyperparameter_builder.get_normalize_stdev(),
+        augmentation=hyperparameter_builder.get_augmentation()
     ).build()
 
     dataset_builder.create_train_dataset(

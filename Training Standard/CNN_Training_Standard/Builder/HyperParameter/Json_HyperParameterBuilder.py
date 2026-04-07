@@ -101,6 +101,9 @@ class Json_HyperparameterBuilder:
     def get_daq_old_path(self):
         return self.__hyperparams.get('daq_old_path', False)
 
+    def get_augmentation(self):
+        return self.__hyperparams.get('augmentation', {})
+
     def get_device(self):
         fw = self.get_framework()
         if fw == 'pytorch':
