@@ -60,45 +60,21 @@ class DAQ_Pytorch_ClassificatoinDatasetBuilder:
     def init_transform(self, input_size, normalize_mean, normalize_stdev, augmentation=None):
         import torchvision.transforms as transforms
         from PIL import Image
+        from .AugmentationBuilder import build_augmentation_transforms
 
-        aug = augmentation or {}
+        pre_aug, post_aug = build_augmentation_transforms(augmentation or {})
+
         transform_list = [
             transforms.Lambda(lambda img: Image.fromarray(img).convert("RGB")),
             transforms.Resize((input_size, input_size)),
         ]
-
-        if aug.get('horizontal_flip', False):
-            transform_list.append(transforms.RandomHorizontalFlip(p=0.5))
-        if aug.get('vertical_flip', False):
-            transform_list.append(transforms.RandomVerticalFlip(p=0.5))
-        if aug.get('rotation', 0) > 0:
-            transform_list.append(transforms.RandomRotation(degrees=aug['rotation']))
-        brightness = aug.get('brightness', 0)
-        contrast = aug.get('contrast', 0)
-        saturation = aug.get('saturation', 0)
-        hue = aug.get('hue', 0)
-        if any([brightness, contrast, saturation, hue]):
-            transform_list.append(transforms.ColorJitter(
-                brightness=brightness or 0, contrast=contrast or 0,
-                saturation=saturation or 0, hue=hue or 0
-            ))
-        if aug.get('gaussian_blur', 0) > 0:
-            transform_list.append(transforms.GaussianBlur(kernel_size=3, sigma=(0.1, aug['gaussian_blur'])))
-        if aug.get('random_affine', 0) > 0:
-            transform_list.append(transforms.RandomAffine(degrees=aug['random_affine']))
-        if aug.get('random_perspective', 0) > 0:
-            transform_list.append(transforms.RandomPerspective(distortion_scale=aug['random_perspective'], p=0.5))
-        if aug.get('random_grayscale', 0) > 0:
-            transform_list.append(transforms.RandomGrayscale(p=aug['random_grayscale']))
-
+        transform_list += pre_aug
         transform_list.append(transforms.ToTensor())
         transform_list.append(transforms.Normalize(
             (normalize_mean, normalize_mean, normalize_mean),
             (normalize_stdev, normalize_stdev, normalize_stdev)
         ))
-
-        if aug.get('random_erasing', 0) > 0:
-            transform_list.append(transforms.RandomErasing(p=aug['random_erasing']))
+        transform_list += post_aug
 
         self.__transform = transforms.Compose(transform_list)
         return self   

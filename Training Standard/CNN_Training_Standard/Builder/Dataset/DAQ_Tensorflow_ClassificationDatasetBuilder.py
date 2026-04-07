@@ -73,10 +73,11 @@ class DAQ_Tensorflow_ClassificationDatasetBuilder:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = cv2.resize(image, (self.__input_size, self.__input_size))
         image = image.astype(np.float32) / 255.0
-        image = (image - self.__normalize_mean) / self.__normalize_stdev
         return image, label
 
     def _create_tf_dataset(self, uri_list, label_list, batch_size, shuffle):
+        from .TF_AugmentationBuilder import build_augmentation_fn
+
         images = []
         labels = []
         for uri, label in zip(uri_list, label_list):
@@ -88,6 +89,15 @@ class DAQ_Tensorflow_ClassificationDatasetBuilder:
         labels = np.array(labels, dtype=np.int64)
 
         dataset = tf.data.Dataset.from_tensor_slices((images, labels))
+
+        augment_fn = build_augmentation_fn(self.__augmentation)
+        if augment_fn is not None:
+            dataset = dataset.map(augment_fn, num_parallel_calls=tf.data.AUTOTUNE)
+
+        mean = self.__normalize_mean
+        std = self.__normalize_stdev
+        dataset = dataset.map(lambda img, lbl: ((img - mean) / std, lbl), num_parallel_calls=tf.data.AUTOTUNE)
+
         if shuffle:
             dataset = dataset.shuffle(buffer_size=len(uri_list))
         dataset = dataset.batch(batch_size, drop_remainder=(batch_size > 1))

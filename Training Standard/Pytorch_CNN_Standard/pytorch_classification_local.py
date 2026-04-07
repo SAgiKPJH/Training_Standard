@@ -1,5 +1,5 @@
 parameters = '''{
-    "version" : "Pytorch_CNN_Standard_v1.0.2",
+    "version" : "Pytorch_CNN_Standard_v1.0.3",
     "hyperparameter":{
         "network_name" : "inceptionv3",
         "epoch" : 20,

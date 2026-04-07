@@ -33,28 +33,26 @@ class Local_Pytorch_ClassificationDatasetBuilder:
         self.__dataset_path = dataset_path
         return self
 
-    def init_transform(self, input_size, normalize_mean, normalize_stdev):
-        """
-        Initialize image transformation pipeline.
-
-        Args:
-            input_size: Target image size
-            normalize_mean: Mean for normalization
-            normalize_stdev: Standard deviation for normalization
-        """
+    def init_transform(self, input_size, normalize_mean, normalize_stdev, augmentation=None):
         import torchvision.transforms as transforms
         from PIL import Image
+        from .AugmentationBuilder import build_augmentation_transforms
 
-        transform = transforms.Compose([
+        pre_aug, post_aug = build_augmentation_transforms(augmentation or {})
+
+        transform_list = [
             transforms.Lambda(lambda img: Image.fromarray(img).convert("RGB")),
-            transforms.ToTensor(),
             transforms.Resize((input_size, input_size)),
-            transforms.Normalize(
-                (normalize_mean, normalize_mean, normalize_mean),
-                (normalize_stdev, normalize_stdev, normalize_stdev)
-            )
-        ])
-        self.__transform = transform
+        ]
+        transform_list += pre_aug
+        transform_list.append(transforms.ToTensor())
+        transform_list.append(transforms.Normalize(
+            (normalize_mean, normalize_mean, normalize_mean),
+            (normalize_stdev, normalize_stdev, normalize_stdev)
+        ))
+        transform_list += post_aug
+
+        self.__transform = transforms.Compose(transform_list)
         return self
 
     def create_train_dataset(self, train_ratio, batch_size, validation_save_random, class_code_info):

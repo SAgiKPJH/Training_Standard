@@ -1,5 +1,5 @@
 parameters = '''{
-    "version" : "Tensorflow_CNN_Standard_v1.0.2",
+    "version" : "Tensorflow_CNN_Standard_v1.0.3",
     "hyperparameter":{
         "network_name" : "efficientnet_b0",
         "epoch" : 5,
