@@ -19,7 +19,7 @@ parameters = '''{
         "lr" : 1e-3,
         "optimizer_name" : "Adam",
         "criterion" : "CrossEntropyLoss",
-        "input_size" : 299,
+        "input_size" : 224,
         "normalize_mean" : 0.5,
         "normalize_stdev" : 0.5,
         "using_gpu" : true,
