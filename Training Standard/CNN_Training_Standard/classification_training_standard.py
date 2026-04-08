@@ -111,7 +111,7 @@ class SaveHook(TrainHook):
         else:
             self.__save_builder.save_csv_metric()
 
-        if epoch % self.__save_epoch == 0:
+        if (self.__save_epoch > 0 and epoch % self.__save_epoch == 0) or (self.__save_epoch == 0 and epoch == total_epoch):
             if self.__daq_old_path:
                 self.__save_builder.save_model(epoch=epoch, model=model)
             else:
