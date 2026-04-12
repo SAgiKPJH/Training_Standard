@@ -1,0 +1,77 @@
+{
+  "Step1": {
+    "Title": "Benchmark Configuration",
+    "Label": "Step 1: benchmark_config.json 설정",
+    "Parameters": {
+      "Framework": {
+        "Type": "select",
+        "Label": "Framework",
+        "Prameter": "common.framework",
+        "Options": [
+          {"Label": "PyTorch", "Value": "pytorch"},
+          {"Label": "TensorFlow", "Value": "tensorflow"}
+        ]
+      },
+      "Epoch": { "Type": "integer", "Label": "Epoch (공통)", "Prameter": "common.epoch" },
+      "TrainRatio": { "Type": "float", "Label": "Train Ratio (공통)", "Prameter": "common.train_ratio" },
+      "UsingGPU": { "Type": "checkbox", "Label": "Using GPU (공통)", "Prameter": "common.using_gpu" },
+      "UsingAMP": { "Type": "checkbox", "Label": "Using AMP (공통)", "Prameter": "common.using_amp" },
+      "Criterion": {
+        "Type": "select",
+        "Label": "Loss Function (공통)",
+        "Prameter": "common.criterion",
+        "Options": [
+          {"Label": "CrossEntropyLoss", "Value": "CrossEntropyLoss"},
+          {"Label": "BCEWithLogitsLoss", "Value": "BCEWithLogitsLoss"},
+          {"Label": "FocalLoss", "Value": "FocalLoss"},
+          {"Label": "MSELoss", "Value": "MSELoss"}
+        ]
+      },
+      "Experiments": {
+        "Type": "array",
+        "Label": "실험 목록",
+        "Prameter": "experiments",
+        "ItemParameters": {
+          "Name": { "Type": "string", "Label": "실험 이름", "Prameter": "name" },
+          "NetworkName": {
+            "Type": "select",
+            "Label": "Network",
+            "Prameter": "network_name",
+            "Options": [
+              {"Label": "efficientnet_b0", "Value": "efficientnet_b0", "DefaultValues": {"input_size": 224}},
+              {"Label": "efficientnet_b1", "Value": "efficientnet_b1", "DefaultValues": {"input_size": 240}},
+              {"Label": "efficientnet_b2", "Value": "efficientnet_b2", "DefaultValues": {"input_size": 260}},
+              {"Label": "efficientnet_b3", "Value": "efficientnet_b3", "DefaultValues": {"input_size": 300}},
+              {"Label": "resnet18", "Value": "resnet18", "DefaultValues": {"input_size": 224}},
+              {"Label": "resnet34", "Value": "resnet34", "DefaultValues": {"input_size": 224}},
+              {"Label": "resnet50", "Value": "resnet50", "DefaultValues": {"input_size": 224}},
+              {"Label": "resnet101", "Value": "resnet101", "DefaultValues": {"input_size": 224}},
+              {"Label": "inceptionv3", "Value": "inceptionv3", "DefaultValues": {"input_size": 299}},
+              {"Label": "mobilenet_v2", "Value": "mobilenet_v2", "DefaultValues": {"input_size": 224}},
+              {"Label": "mobilenet_v3_small", "Value": "mobilenet_v3_small", "DefaultValues": {"input_size": 224}},
+              {"Label": "densenet121", "Value": "densenet121", "DefaultValues": {"input_size": 224}},
+              {"Label": "vgg16", "Value": "vgg16", "DefaultValues": {"input_size": 224}},
+              {"Label": "convnext_tiny", "Value": "convnext_tiny", "DefaultValues": {"input_size": 224}},
+              {"Label": "swin_t", "Value": "swin_t", "DefaultValues": {"input_size": 224}}
+            ]
+          },
+          "InputSize": { "Type": "integer", "Label": "Input Size", "Prameter": "input_size" },
+          "BatchSize": { "Type": "integer", "Label": "Batch Size", "Prameter": "batch_size" },
+          "Optimizer": {
+            "Type": "select",
+            "Label": "Optimizer",
+            "Prameter": "optimizer_name",
+            "Options": [
+              {"Label": "Adam", "Value": "Adam"},
+              {"Label": "SGD", "Value": "SGD"},
+              {"Label": "Adagrad", "Value": "Adagrad"},
+              {"Label": "AdamW", "Value": "AdamW"},
+              {"Label": "RMSprop", "Value": "RMSprop"}
+            ]
+          },
+          "LearningRate": { "Type": "float", "Label": "Learning Rate", "Prameter": "lr" }
+        }
+      }
+    }
+  }
+}

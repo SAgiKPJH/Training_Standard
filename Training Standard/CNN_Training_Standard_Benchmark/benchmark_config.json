@@ -1,0 +1,63 @@
+{
+  "description": "네트워크/파라미터 벤치마크 설정",
+  "common": {
+    "framework": "pytorch",
+    "epoch": 10,
+    "train_ratio": 0.8,
+    "normalize_mean": 0.5,
+    "normalize_stdev": 0.5,
+    "using_gpu": false,
+    "using_amp": false,
+    "criterion": "CrossEntropyLoss"
+  },
+  "experiments": [
+    {
+      "name": "efficientnet_b0_adam_lr1e-3",
+      "network_name": "efficientnet_b0",
+      "input_size": 224,
+      "batch_size": 16,
+      "optimizer_name": "Adam",
+      "lr": 1e-3
+    },
+    {
+      "name": "efficientnet_b0_adam_lr1e-4",
+      "network_name": "efficientnet_b0",
+      "input_size": 224,
+      "batch_size": 16,
+      "optimizer_name": "Adam",
+      "lr": 1e-4
+    },
+    {
+      "name": "efficientnet_b0_sgd_lr1e-2",
+      "network_name": "efficientnet_b0",
+      "input_size": 224,
+      "batch_size": 16,
+      "optimizer_name": "SGD",
+      "lr": 1e-2
+    },
+    {
+      "name": "resnet18_adam_lr1e-3",
+      "network_name": "resnet18",
+      "input_size": 224,
+      "batch_size": 16,
+      "optimizer_name": "Adam",
+      "lr": 1e-3
+    },
+    {
+      "name": "resnet50_adam_lr1e-3",
+      "network_name": "resnet50",
+      "input_size": 224,
+      "batch_size": 16,
+      "optimizer_name": "Adam",
+      "lr": 1e-3
+    },
+    {
+      "name": "inceptionv3_adam_lr1e-3",
+      "network_name": "inceptionv3",
+      "input_size": 299,
+      "batch_size": 8,
+      "optimizer_name": "Adam",
+      "lr": 1e-3
+    }
+  ]
+}
