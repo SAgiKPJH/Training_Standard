@@ -15,7 +15,7 @@ def scan_project(root_dir):
 
     for dirpath, dirnames, filenames in os.walk(root_dir):
         # 제외 디렉토리
-        dirnames[:] = [d for d in dirnames if d not in ('__pycache__', '.git', '.claude', 'node_modules', 'Sample')]
+        dirnames[:] = [d for d in dirnames if d not in ('__pycache__', '.git', '.claude', 'node_modules', 'Sample', 'Models')]
         if '20260331' in dirpath:
             continue
 
