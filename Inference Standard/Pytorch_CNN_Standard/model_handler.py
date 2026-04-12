@@ -29,8 +29,8 @@ class ModelHandler:
 
         self.__transform = transforms.Compose([
             transforms.Lambda(lambda img: Image.fromarray(img).convert("RGB")),
-            transforms.ToTensor(),
             transforms.Resize((self.__input_size, self.__input_size)),
+            transforms.ToTensor(),
             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
         ])
 
@@ -38,10 +38,9 @@ class ModelHandler:
         data = pickle.loads(data)
 
         if data.ndim == 2:
-            data = cv2.cvtColor(data, cv2.COLOR_GRAY2RGB)
-        else:
-            data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+            data = cv2.cvtColor(data, cv2.COLOR_GRAY2BGR)
 
+        # BGR 그대로 전달 (학습 시 BGR로 학습됨)
         data = self.__transform(data)
         data = data.unsqueeze(0).to(self.__device)
 
@@ -54,7 +53,7 @@ class ModelHandler:
 
         output = list()
         for i in range(self.__label_info['label_count']):
-            current_label = self.__label_info[f'label_{i}']
+            current_label = dict(self.__label_info[f'label_{i}'])
             current_label['score'] = predict[0][i].item()
             output.append(current_label)
 
