@@ -1,6 +1,7 @@
 """
 CNN Training Standard 전체 네트워크 DAQ 테스트
-DAQ 서버 환경에서 등록된 모든 모델에 대해 1 epoch 학습 테스트.
+ui.json에 등록된 모든 네트워크에 대해 1 epoch 학습 테스트.
+PyTorch + TensorFlow 모두 테스트합니다.
 """
 
 ##$--
@@ -41,6 +42,8 @@ parameters = '''{
 ##$--
 
 import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'CNN_Training_Standard'))
+
 import json
 import time
 import logging
@@ -49,26 +52,17 @@ logger = globals().get('JOB_LOGGER', logging.getLogger())
 logger.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-# Builder 참조
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'CNN_Training_Standard'))
-
 from Builder import Json_HyperparameterBuilder
 from Builder import get_framework_builders, get_daq_framework_builders
 from Builder import TrainHook
-from Builder.Model.Pytorch_Classification_Models import _TORCHVISION_MODELS, _CUSTOM_MODELS, _resolve_model
 
-# 사용 가능한 PyTorch 모델 자동 수집
-PYTORCH_MODELS = [n for n in list(_CUSTOM_MODELS.keys()) + list(_TORCHVISION_MODELS.keys()) if _resolve_model(n) is not None]
+# network_list.json에서 모델 목록 로드
+_list_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'network_list.json')
+with open(_list_path, 'r', encoding='utf-8') as f:
+    _network_list = json.load(f)
 
-# 모델별 input_size
-INPUT_SIZES = {
-    "inceptionv3": 299, "inceptionv4": 299,
-    "efficientnet_b1": 240, "efficientnet_b2": 260, "efficientnet_b3": 300,
-    "efficientnet_b4": 380, "efficientnet_b5": 456, "efficientnet_b6": 528, "efficientnet_b7": 600,
-    "efficientnet_v2_s": 384, "efficientnet_v2_m": 480, "efficientnet_v2_l": 480,
-    "swin_v2_t": 256, "swin_v2_s": 256, "swin_v2_b": 256,
-    "vit_h_14": 518,
-}
+PYTORCH_MODELS = [(m['name'], m['input_size']) for m in _network_list['pytorch']]
+TENSORFLOW_MODELS = [(m['name'], m['input_size']) for m in _network_list['tensorflow']]
 
 
 class MinimalSaveHook(TrainHook):
@@ -78,9 +72,9 @@ class MinimalSaveHook(TrainHook):
     def training_end(self): pass
 
 
-def test_single_model(network_name, operation_builder, classcode_builder, framework="pytorch"):
+def test_single_model(network_name, input_size, operation_builder, classcode_builder, framework):
     """단일 모델 DAQ 테스트"""
-    input_size = INPUT_SIZES.get(network_name, 224)
+    device = 'cuda' if framework == 'pytorch' else '/gpu:0'
 
     Model, _, TrainingBuilder, _ = get_framework_builders(framework)
     DAQDatasetBuilder = get_daq_framework_builders(framework)
@@ -104,14 +98,21 @@ def test_single_model(network_name, operation_builder, classcode_builder, framew
         raise RuntimeError("Dataset Build Failed")
 
     try:
-        model_builder = Model().init_device('cuda' if framework == 'pytorch' else '/gpu:0')
-        model = model_builder.init_model(
-            num_classes=classcode_builder.get_class_count(),
-            network_name=network_name
-        ).get_model()
+        model_builder = Model().init_device(device)
+        if framework == "tensorflow":
+            model = model_builder.init_model(
+                num_classes=classcode_builder.get_class_count(),
+                network_name=network_name,
+                input_size=input_size
+            ).get_model()
+        else:
+            model = model_builder.init_model(
+                num_classes=classcode_builder.get_class_count(),
+                network_name=network_name
+            ).get_model()
 
         training_builder = TrainingBuilder(None
-            ).initialize(epoch_total=1, device='cuda' if framework == 'pytorch' else '/gpu:0', using_amp=False
+            ).initialize(epoch_total=1, device=device, using_amp=False
             ).init_model(model=model
             ).init_optimizer(optimizer_name='Adam', lr=1e-3
             ).init_criterion(criterion_name='CrossEntropyLoss'
@@ -126,11 +127,30 @@ def test_single_model(network_name, operation_builder, classcode_builder, framew
         dataset_builder.temp_folder_delete()
 
 
+def run_framework_tests(framework, models, operation_builder, classcode_builder):
+    """한 프레임워크의 전체 모델 테스트"""
+    results = {"pass": [], "fail": []}
+
+    for i, (name, input_size) in enumerate(models, 1):
+        logger.info(f"  [{i}/{len(models)}] {name} (input: {input_size})")
+        start = time.time()
+        try:
+            test_single_model(name, input_size, operation_builder, classcode_builder, framework)
+            elapsed = time.time() - start
+            logger.info(f"    PASS ({elapsed:.1f}s)")
+            results["pass"].append(name)
+        except Exception as e:
+            elapsed = time.time() - start
+            error_msg = str(e).split('\n')[0][:100]
+            logger.info(f"    FAIL ({elapsed:.1f}s): {error_msg}")
+            results["fail"].append((name, error_msg))
+
+    return results
+
+
 def RecipeRun(**kwargs):
     from Builder import Operation_Builder
     from Builder import DAQ_Classification_ClassCodeBuilder
-
-    framework = kwargs['hyperparameter'].get('framework', 'pytorch')
 
     operation_builder = Operation_Builder(**kwargs).initialize().build()
     classcode_builder = DAQ_Classification_ClassCodeBuilder().init_url_info(
@@ -140,43 +160,39 @@ def RecipeRun(**kwargs):
         gt_dataset_id=operation_builder.get_gt_dataset_id()
     ).build()
 
-    models = PYTORCH_MODELS
     logger.info(f"{'='*60}")
-    logger.info(f"CNN Training Standard - DAQ Network Test")
-    logger.info(f"Framework: {framework}")
-    logger.info(f"Available models: {len(models)}")
+    logger.info(f"CNN Training Standard - DAQ Network Test (All)")
+    logger.info(f"PyTorch models: {len(PYTORCH_MODELS)}")
+    logger.info(f"TensorFlow models: {len(TENSORFLOW_MODELS)}")
     logger.info(f"{'='*60}\n")
 
-    results = {"pass": [], "fail": []}
+    # PyTorch 테스트
+    logger.info(f"--- PyTorch ({len(PYTORCH_MODELS)} models) ---")
+    pt_results = run_framework_tests("pytorch", PYTORCH_MODELS, operation_builder, classcode_builder)
 
-    for i, name in enumerate(models, 1):
-        logger.info(f"[{i}/{len(models)}] Testing: {name}")
-        start = time.time()
-        try:
-            test_single_model(name, operation_builder, classcode_builder, framework)
-            elapsed = time.time() - start
-            logger.info(f"  PASS ({elapsed:.1f}s)\n")
-            results["pass"].append(name)
-        except Exception as e:
-            elapsed = time.time() - start
-            error_msg = str(e).split('\n')[0][:100]
-            logger.info(f"  FAIL ({elapsed:.1f}s): {error_msg}\n")
-            results["fail"].append((name, error_msg))
+    # TensorFlow 테스트
+    logger.info(f"\n--- TensorFlow ({len(TENSORFLOW_MODELS)} models) ---")
+    tf_results = run_framework_tests("tensorflow", TENSORFLOW_MODELS, operation_builder, classcode_builder)
 
     # 결과 요약
-    logger.info(f"{'='*60}")
+    logger.info(f"\n{'='*60}")
     logger.info(f"RESULTS")
     logger.info(f"{'='*60}")
-    logger.info(f"  PASS: {len(results['pass'])}")
-    logger.info(f"  FAIL: {len(results['fail'])}")
 
-    if results["fail"]:
-        logger.info(f"\nFailed models:")
-        for name, err in results["fail"]:
+    logger.info(f"\n[PyTorch] PASS: {len(pt_results['pass'])}, FAIL: {len(pt_results['fail'])}")
+    if pt_results["fail"]:
+        for name, err in pt_results["fail"]:
             logger.info(f"  X {name}: {err}")
 
-    total = len(results['pass']) + len(results['fail'])
-    logger.info(f"\nTotal: {len(results['pass'])}/{total} passed")
+    logger.info(f"\n[TensorFlow] PASS: {len(tf_results['pass'])}, FAIL: {len(tf_results['fail'])}")
+    if tf_results["fail"]:
+        for name, err in tf_results["fail"]:
+            logger.info(f"  X {name}: {err}")
+
+    total_pass = len(pt_results['pass']) + len(tf_results['pass'])
+    total_fail = len(pt_results['fail']) + len(tf_results['fail'])
+    total = total_pass + total_fail
+    logger.info(f"\nTotal: {total_pass}/{total} passed")
 
 
 if __name__ == "__main__":
