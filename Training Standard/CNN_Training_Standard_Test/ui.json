@@ -1,7 +1,7 @@
 {
-  "Info": "테스트용 - 등록된 모든 네트워크를 자동으로 1 epoch 학습 테스트",
   "Step1": {
-    "Title": "Test Settings",
+    "Title": "테스트용 - 등록된 모든 네트워크를 자동으로 1 epoch 학습 테스트",
+    "Label": "Test Settings",
     "Parameters": {
       "Framework": { "Type": "select", "Prameter": "hyperparameter.framework", "Options": [
         {"Label": "PyTorch", "Value": "pytorch"},
