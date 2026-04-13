@@ -1,7 +1,7 @@
 """
 CNN Training Standard 전체 네트워크 로컬 테스트
-ui.json에 등록된 모든 네트워크에 대해 1 epoch 학습 테스트.
-PyTorch + TensorFlow 모두 테스트합니다.
+network_list.json에 등록된 모든 네트워크에 대해 1 epoch 학습 테스트.
+Dataset은 input_size별로 한 번만 생성하여 공유합니다.
 """
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'CNN_Training_Standard'))
@@ -36,17 +36,31 @@ class MinimalSaveHook(TrainHook):
     def training_end(self): pass
 
 
-def test_model(network_name, input_size, framework):
-    classcode = Local_Classification_ClassCodeBuilder().init_label_data(dataset_path=dataset).build()
-    Model, LocalDatasetBuilder, TrainingBuilder, _ = get_framework_builders(framework)
+def create_dataset_cached(framework, input_size, classcode, cache):
+    """input_size별 dataset 캐시. 동일 input_size면 재사용."""
+    cache_key = f"{framework}_{input_size}"
+    if cache_key in cache:
+        return cache[cache_key]
 
-    dataset_builder = LocalDatasetBuilder(logger=None).init_dataset_path(dataset_path=dataset
+    logger.info(f"    Creating dataset (input_size={input_size})...")
+    _, LocalDatasetBuilder, _, _ = get_framework_builders(framework)
+
+    dataset_builder = LocalDatasetBuilder(logger=logger).init_dataset_path(dataset_path=dataset
         ).init_transform(input_size=input_size, normalize_mean=0.5, normalize_stdev=0.5
         ).create_train_dataset(
             train_ratio=0.8, batch_size=2,
             validation_save_random=False,
             class_code_info=classcode.get_class_code_info()
         )
+
+    cache[cache_key] = dataset_builder
+    return dataset_builder
+
+
+def test_model(network_name, input_size, framework, classcode, dataset_cache):
+    Model, _, TrainingBuilder, _ = get_framework_builders(framework)
+
+    dataset_builder = create_dataset_cached(framework, input_size, classcode, dataset_cache)
 
     model_builder = Model().init_device('cpu')
     if framework == "tensorflow":
@@ -61,7 +75,7 @@ def test_model(network_name, input_size, framework):
             network_name=network_name
         ).get_model()
 
-    training_builder = TrainingBuilder(None
+    training_builder = TrainingBuilder(logger
         ).initialize(epoch_total=1, device='cpu', using_amp=False
         ).init_model(model=model
         ).init_optimizer(optimizer_name='Adam', lr=1e-3
@@ -75,14 +89,14 @@ def test_model(network_name, input_size, framework):
     )
 
 
-def run_framework_tests(framework, models):
+def run_framework_tests(framework, models, classcode, dataset_cache):
     results = {"pass": [], "fail": []}
 
     for i, (name, input_size) in enumerate(models, 1):
         logger.info(f"  [{i}/{len(models)}] {name} (input: {input_size})")
         start = time.time()
         try:
-            test_model(name, input_size, framework)
+            test_model(name, input_size, framework, classcode, dataset_cache)
             elapsed = time.time() - start
             logger.info(f"    PASS ({elapsed:.1f}s)")
             results["pass"].append(name)
@@ -96,6 +110,9 @@ def run_framework_tests(framework, models):
 
 
 def run_all_tests():
+    classcode = Local_Classification_ClassCodeBuilder().init_label_data(dataset_path=dataset).build()
+    dataset_cache = {}
+
     logger.info(f"{'='*60}")
     logger.info(f"CNN Training Standard - Local Network Test (All)")
     logger.info(f"Dataset: {dataset}")
@@ -105,11 +122,11 @@ def run_all_tests():
 
     # PyTorch 테스트
     logger.info(f"--- PyTorch ({len(PYTORCH_MODELS)} models) ---")
-    pt_results = run_framework_tests("pytorch", PYTORCH_MODELS)
+    pt_results = run_framework_tests("pytorch", PYTORCH_MODELS, classcode, dataset_cache)
 
     # TensorFlow 테스트
     logger.info(f"\n--- TensorFlow ({len(TENSORFLOW_MODELS)} models) ---")
-    tf_results = run_framework_tests("tensorflow", TENSORFLOW_MODELS)
+    tf_results = run_framework_tests("tensorflow", TENSORFLOW_MODELS, classcode, dataset_cache)
 
     # 결과 요약
     logger.info(f"\n{'='*60}")

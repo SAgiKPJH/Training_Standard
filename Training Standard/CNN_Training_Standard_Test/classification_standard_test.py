@@ -1,7 +1,8 @@
 """
 CNN Training Standard 전체 네트워크 DAQ 테스트
-ui.json에 등록된 모든 네트워크에 대해 1 epoch 학습 테스트.
+network_list.json에 등록된 모든 네트워크에 대해 1 epoch 학습 테스트.
 PyTorch + TensorFlow 모두 테스트합니다.
+Dataset은 input_size별로 한 번만 생성하여 공유합니다.
 """
 
 ##$--
@@ -52,7 +53,6 @@ logger = globals().get('JOB_LOGGER', logging.getLogger())
 logger.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-from Builder import Json_HyperparameterBuilder
 from Builder import get_framework_builders, get_daq_framework_builders
 from Builder import TrainHook
 
@@ -72,11 +72,13 @@ class MinimalSaveHook(TrainHook):
     def training_end(self): pass
 
 
-def test_single_model(network_name, input_size, operation_builder, classcode_builder, framework):
-    """단일 모델 DAQ 테스트"""
-    device = 'cuda' if framework == 'pytorch' else '/gpu:0'
+def create_dataset_cached(framework, input_size, operation_builder, classcode_builder, cache):
+    """input_size별 dataset 캐시. 동일 input_size면 재사용."""
+    cache_key = f"{framework}_{input_size}"
+    if cache_key in cache:
+        return cache[cache_key]
 
-    Model, _, TrainingBuilder, _ = get_framework_builders(framework)
+    logger.info(f"    Creating dataset (input_size={input_size})...")
     DAQDatasetBuilder = get_daq_framework_builders(framework)
 
     dataset_builder = DAQDatasetBuilder(logger=logger).init_url_info(
@@ -97,37 +99,45 @@ def test_single_model(network_name, input_size, operation_builder, classcode_bui
     if dataset_builder.success() is False:
         raise RuntimeError("Dataset Build Failed")
 
-    try:
-        model_builder = Model().init_device(device)
-        if framework == "tensorflow":
-            model = model_builder.init_model(
-                num_classes=classcode_builder.get_class_count(),
-                network_name=network_name,
-                input_size=input_size
-            ).get_model()
-        else:
-            model = model_builder.init_model(
-                num_classes=classcode_builder.get_class_count(),
-                network_name=network_name
-            ).get_model()
-
-        training_builder = TrainingBuilder(None
-            ).initialize(epoch_total=1, device=device, using_amp=False
-            ).init_model(model=model
-            ).init_optimizer(optimizer_name='Adam', lr=1e-3
-            ).init_criterion(criterion_name='CrossEntropyLoss'
-            ).builder()
-
-        training_builder.train(
-            train_data_loader=dataset_builder.get_train_data_loader(),
-            validation_data_loader=dataset_builder.get_validation_data_loader(),
-            hook=MinimalSaveHook()
-        )
-    finally:
-        dataset_builder.temp_folder_delete()
+    cache[cache_key] = dataset_builder
+    return dataset_builder
 
 
-def run_framework_tests(framework, models, operation_builder, classcode_builder):
+def test_single_model(network_name, input_size, operation_builder, classcode_builder, framework, dataset_cache):
+    """단일 모델 테스트"""
+    device = 'cuda' if framework == 'pytorch' else '/gpu:0'
+    Model, _, TrainingBuilder, _ = get_framework_builders(framework)
+
+    dataset_builder = create_dataset_cached(framework, input_size, operation_builder, classcode_builder, dataset_cache)
+
+    model_builder = Model().init_device(device)
+    if framework == "tensorflow":
+        model = model_builder.init_model(
+            num_classes=classcode_builder.get_class_count(),
+            network_name=network_name,
+            input_size=input_size
+        ).get_model()
+    else:
+        model = model_builder.init_model(
+            num_classes=classcode_builder.get_class_count(),
+            network_name=network_name
+        ).get_model()
+
+    training_builder = TrainingBuilder(logger
+        ).initialize(epoch_total=1, device=device, using_amp=False
+        ).init_model(model=model
+        ).init_optimizer(optimizer_name='Adam', lr=1e-3
+        ).init_criterion(criterion_name='CrossEntropyLoss'
+        ).builder()
+
+    training_builder.train(
+        train_data_loader=dataset_builder.get_train_data_loader(),
+        validation_data_loader=dataset_builder.get_validation_data_loader(),
+        hook=MinimalSaveHook()
+    )
+
+
+def run_framework_tests(framework, models, operation_builder, classcode_builder, dataset_cache):
     """한 프레임워크의 전체 모델 테스트"""
     results = {"pass": [], "fail": []}
 
@@ -135,7 +145,7 @@ def run_framework_tests(framework, models, operation_builder, classcode_builder)
         logger.info(f"  [{i}/{len(models)}] {name} (input: {input_size})")
         start = time.time()
         try:
-            test_single_model(name, input_size, operation_builder, classcode_builder, framework)
+            test_single_model(name, input_size, operation_builder, classcode_builder, framework, dataset_cache)
             elapsed = time.time() - start
             logger.info(f"    PASS ({elapsed:.1f}s)")
             results["pass"].append(name)
@@ -166,13 +176,22 @@ def RecipeRun(**kwargs):
     logger.info(f"TensorFlow models: {len(TENSORFLOW_MODELS)}")
     logger.info(f"{'='*60}\n")
 
+    dataset_cache = {}
+
     # PyTorch 테스트
     logger.info(f"--- PyTorch ({len(PYTORCH_MODELS)} models) ---")
-    pt_results = run_framework_tests("pytorch", PYTORCH_MODELS, operation_builder, classcode_builder)
+    pt_results = run_framework_tests("pytorch", PYTORCH_MODELS, operation_builder, classcode_builder, dataset_cache)
 
     # TensorFlow 테스트
     logger.info(f"\n--- TensorFlow ({len(TENSORFLOW_MODELS)} models) ---")
-    tf_results = run_framework_tests("tensorflow", TENSORFLOW_MODELS, operation_builder, classcode_builder)
+    tf_results = run_framework_tests("tensorflow", TENSORFLOW_MODELS, operation_builder, classcode_builder, dataset_cache)
+
+    # temp 폴더 정리
+    for ds in dataset_cache.values():
+        try:
+            ds.temp_folder_delete()
+        except Exception:
+            pass
 
     # 결과 요약
     logger.info(f"\n{'='*60}")
