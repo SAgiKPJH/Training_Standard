@@ -32,7 +32,8 @@ TENSORFLOW_MODELS = [(m['name'], m['input_size']) for m in _network_list['tensor
 class MinimalSaveHook(TrainHook):
     def training_start(self): pass
     def on_epoch_end(self, total_epoch, epoch, train_loss, validation_loss, epoch_elapsed_time, model):
-        logger.info(f"    train_loss: {train_loss:.4f}, val_loss: {validation_loss:.4f if validation_loss else 'N/A'}, time: {epoch_elapsed_time:.1f}s")
+        val_str = f"{validation_loss:.4f}" if validation_loss is not None else "N/A"
+        logger.info(f"    train_loss: {train_loss:.4f}, val_loss: {val_str}, time: {epoch_elapsed_time:.1f}s")
     def training_end(self): pass
 
 

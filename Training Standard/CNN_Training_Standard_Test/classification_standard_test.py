@@ -1,8 +1,8 @@
 """
 CNN Training Standard 전체 네트워크 DAQ 테스트
-network_list.json에 등록된 모든 네트워크에 대해 1 epoch 학습 테스트.
-PyTorch + TensorFlow 모두 테스트합니다.
+network_list.json에 등록된 모든 네트워크에 대해 학습 테스트.
 Dataset은 input_size별로 한 번만 생성하여 공유합니다.
+결과는 DAQ 저장소에 CSV로 저장합니다.
 """
 
 ##$--
@@ -65,15 +65,24 @@ PYTORCH_MODELS = [(m['name'], m['input_size']) for m in _network_list['pytorch']
 TENSORFLOW_MODELS = [(m['name'], m['input_size']) for m in _network_list['tensorflow']]
 
 
-class MinimalSaveHook(TrainHook):
+class MetricsSaveHook(TrainHook):
+    """테스트용 Hook - epoch별 metrics 수집"""
+    def __init__(self):
+        self.history = []
     def training_start(self): pass
-    def on_epoch_end(self, total_epoch, epoch, train_loss, validation_loss, epoch_elapsed_time, model):
-        logger.info(f"    train_loss: {train_loss:.4f}, val_loss: {validation_loss:.4f if validation_loss else 'N/A'}, time: {epoch_elapsed_time:.1f}s")
     def training_end(self): pass
+    def on_epoch_end(self, total_epoch, epoch, train_loss, validation_loss, epoch_elapsed_time, model):
+        self.history.append({
+            "epoch": epoch,
+            "train_loss": train_loss,
+            "validation_loss": validation_loss,
+            "time": epoch_elapsed_time,
+        })
+        val_str = f"{validation_loss:.4f}" if validation_loss is not None else "N/A"
+        logger.info(f"    epoch {epoch}: train_loss={train_loss:.4f}, val_loss={val_str}, time={epoch_elapsed_time:.1f}s")
 
 
 def create_dataset_cached(framework, input_size, operation_builder, classcode_builder, cache):
-    """input_size별 dataset 캐시. 동일 input_size면 재사용."""
     cache_key = f"{framework}_{input_size}"
     if cache_key in cache:
         return cache[cache_key]
@@ -103,8 +112,7 @@ def create_dataset_cached(framework, input_size, operation_builder, classcode_bu
     return dataset_builder
 
 
-def test_single_model(network_name, input_size, operation_builder, classcode_builder, framework, dataset_cache):
-    """단일 모델 테스트"""
+def test_single_model(network_name, input_size, operation_builder, classcode_builder, framework, dataset_cache, epoch=1):
     device = 'cuda' if framework == 'pytorch' else '/gpu:0'
     Model, _, TrainingBuilder, _ = get_framework_builders(framework)
 
@@ -124,38 +132,86 @@ def test_single_model(network_name, input_size, operation_builder, classcode_bui
         ).get_model()
 
     training_builder = TrainingBuilder(logger
-        ).initialize(epoch_total=1, device=device, using_amp=False
+        ).initialize(epoch_total=epoch, device=device, using_amp=False
         ).init_model(model=model
         ).init_optimizer(optimizer_name='Adam', lr=1e-3
         ).init_criterion(criterion_name='CrossEntropyLoss'
         ).builder()
 
+    hook = MetricsSaveHook()
     training_builder.train(
         train_data_loader=dataset_builder.get_train_data_loader(),
         validation_data_loader=dataset_builder.get_validation_data_loader(),
-        hook=MinimalSaveHook()
+        hook=hook
     )
+    return hook.history
 
 
-def run_framework_tests(framework, models, operation_builder, classcode_builder, dataset_cache):
-    """한 프레임워크의 전체 모델 테스트"""
+def run_framework_tests(framework, models, operation_builder, classcode_builder, dataset_cache, epoch=1):
     results = {"pass": [], "fail": []}
+    all_history = {}
 
     for i, (name, input_size) in enumerate(models, 1):
-        logger.info(f"  [{i}/{len(models)}] {name} (input: {input_size})")
+        logger.info(f"  [{i}/{len(models)}] {name} (input: {input_size}, epoch: {epoch})")
         start = time.time()
         try:
-            test_single_model(name, input_size, operation_builder, classcode_builder, framework, dataset_cache)
+            history = test_single_model(name, input_size, operation_builder, classcode_builder, framework, dataset_cache, epoch)
             elapsed = time.time() - start
             logger.info(f"    PASS ({elapsed:.1f}s)")
             results["pass"].append(name)
+            all_history[name] = {"status": "PASS", "time": elapsed, "history": history}
         except Exception as e:
             elapsed = time.time() - start
             error_msg = str(e).split('\n')[0][:100]
             logger.info(f"    FAIL ({elapsed:.1f}s): {error_msg}")
             results["fail"].append((name, error_msg))
+            all_history[name] = {"status": "FAIL", "time": elapsed, "error": error_msg, "history": []}
 
-    return results
+    return results, all_history
+
+
+def save_results_csv(all_history, operation_builder):
+    """전체 테스트 결과를 DAQ에 CSV로 저장"""
+    import mpp
+
+    # 상세 결과 CSV
+    detail_csv = [["network", "status", "epoch", "train_loss", "validation_loss", "epoch_time_sec"]]
+    for network_name, data in all_history.items():
+        if data["status"] == "FAIL":
+            detail_csv.append([network_name, "FAIL", "", "", "", f"{data['time']:.1f}"])
+        else:
+            for h in data["history"]:
+                val_loss = f"{h['validation_loss']:.6f}" if h['validation_loss'] is not None else ""
+                detail_csv.append([
+                    network_name, "PASS", h['epoch'],
+                    f"{h['train_loss']:.6f}", val_loss, f"{h['time']:.2f}"
+                ])
+
+    # 요약 CSV
+    summary_csv = [["network", "status", "final_train_loss", "final_val_loss", "best_val_loss", "total_time_sec"]]
+    for network_name, data in all_history.items():
+        if data["status"] == "FAIL":
+            summary_csv.append([network_name, "FAIL", "", "", "", f"{data['time']:.1f}"])
+        else:
+            history = data["history"]
+            last = history[-1]
+            val_losses = [h['validation_loss'] for h in history if h['validation_loss'] is not None]
+            summary_csv.append([
+                network_name, "PASS",
+                f"{last['train_loss']:.6f}",
+                f"{last['validation_loss']:.6f}" if last['validation_loss'] is not None else "",
+                f"{min(val_losses):.6f}" if val_losses else "",
+                f"{data['time']:.1f}"
+            ])
+
+    bucket_url = operation_builder.get_bucket_url()
+    channel = operation_builder.get_operation_channel()
+    access_token = operation_builder.get_access_token()
+    chunk_size = operation_builder.get_chunk_size()
+
+    mpp.intel64.save_csv(detail_csv, f"{bucket_url}/test_results_detail.csv", channel=channel, access_token=access_token, chunk_size=chunk_size)
+    mpp.intel64.save_csv(summary_csv, f"{bucket_url}/test_results_summary.csv", channel=channel, access_token=access_token, chunk_size=chunk_size)
+    logger.info(f"Results saved: test_results_detail.csv, test_results_summary.csv")
 
 
 def RecipeRun(**kwargs):
@@ -170,21 +226,27 @@ def RecipeRun(**kwargs):
         gt_dataset_id=operation_builder.get_gt_dataset_id()
     ).build()
 
+    epoch = int(kwargs['hyperparameter'].get('epoch', 1))
+
     logger.info(f"{'='*60}")
     logger.info(f"CNN Training Standard - DAQ Network Test (All)")
+    logger.info(f"Epoch: {epoch}")
     logger.info(f"PyTorch models: {len(PYTORCH_MODELS)}")
     logger.info(f"TensorFlow models: {len(TENSORFLOW_MODELS)}")
     logger.info(f"{'='*60}\n")
 
     dataset_cache = {}
+    all_history = {}
 
     # PyTorch 테스트
     logger.info(f"--- PyTorch ({len(PYTORCH_MODELS)} models) ---")
-    pt_results = run_framework_tests("pytorch", PYTORCH_MODELS, operation_builder, classcode_builder, dataset_cache)
+    pt_results, pt_history = run_framework_tests("pytorch", PYTORCH_MODELS, operation_builder, classcode_builder, dataset_cache, epoch)
+    all_history.update(pt_history)
 
     # TensorFlow 테스트
     logger.info(f"\n--- TensorFlow ({len(TENSORFLOW_MODELS)} models) ---")
-    tf_results = run_framework_tests("tensorflow", TENSORFLOW_MODELS, operation_builder, classcode_builder, dataset_cache)
+    tf_results, tf_history = run_framework_tests("tensorflow", TENSORFLOW_MODELS, operation_builder, classcode_builder, dataset_cache, epoch)
+    all_history.update(tf_history)
 
     # temp 폴더 정리
     for ds in dataset_cache.values():
@@ -192,6 +254,12 @@ def RecipeRun(**kwargs):
             ds.temp_folder_delete()
         except Exception:
             pass
+
+    # CSV 저장
+    try:
+        save_results_csv(all_history, operation_builder)
+    except Exception as e:
+        logger.info(f"CSV save failed: {e}")
 
     # 결과 요약
     logger.info(f"\n{'='*60}")
