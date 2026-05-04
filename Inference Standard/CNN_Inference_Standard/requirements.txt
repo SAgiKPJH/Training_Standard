@@ -1,0 +1,9 @@
+# PyTorch 모델 (.pth/.pt) 사용 시
+torch>=2.0.0
+torchvision>=0.15.0
+
+# TensorFlow 모델 (.h5/.keras/SavedModel) 사용 시
+# tensorflow>=2.12.0
+
+# 공통
+opencv-python>=4.8.0

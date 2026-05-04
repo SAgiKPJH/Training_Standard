@@ -1,0 +1,6 @@
+{
+  "model_file": "data/model.pth",
+  "device": "gpu",
+  "normalize_mean": 0.5,
+  "normalize_stdev": 0.5
+}
