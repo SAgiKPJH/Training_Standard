@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import cv2
 import pickle
 
@@ -22,15 +23,16 @@ class ModelHandler:
     """
 
     def __init__(self, data, context):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self._base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        with open(os.path.join(base_dir, "model.json"), 'r', encoding='utf-8') as f:
+        with open(os.path.join(self._base_dir, "model.json"), 'r', encoding='utf-8') as f:
             config = json.load(f)
 
-        model_file      = os.path.join(base_dir, config['model_file'])
+        model_file      = os.path.join(self._base_dir, config['model_file'])
         device          = config.get('device', 'cpu')
         normalize_mean  = float(config.get('normalize_mean', 0.5))
         normalize_stdev = float(config.get('normalize_stdev', 0.5))
+        self._test_image_path = os.path.join(self._base_dir, config.get('test_image', 'data/image.png'))
 
         ext = os.path.splitext(model_file)[1].lower()
 
@@ -50,12 +52,26 @@ class ModelHandler:
         output = self._inference.infer(image)
         return pickle.dumps(output), context
 
+    def test(self):
+        if not os.path.exists(self._test_image_path):
+            raise FileNotFoundError(f"테스트 이미지를 찾을 수 없습니다: {self._test_image_path}")
+
+        image = cv2.imread(self._test_image_path, cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError(f"이미지를 읽을 수 없습니다: {self._test_image_path}")
+
+        start = time.perf_counter()
+        result_bytes, _ = self(pickle.dumps(image), None)
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        results = pickle.loads(result_bytes)
+        print(f"[test] image : {self._test_image_path}")
+        print(f"[test] elapsed: {elapsed_ms:.1f} ms")
+        print("[test] results:")
+        for item in results:
+            print(f"  {item}")
+
 
 if __name__ == "__main__":
-    test_image_path = "data/image.png"
-    test_image = cv2.imread(test_image_path, cv2.IMREAD_COLOR)
-
     handler = ModelHandler(None, None)
-    result, _ = handler(pickle.dumps(test_image), None)
-
-    print(*pickle.loads(result), sep="\n")
+    handler.test()
