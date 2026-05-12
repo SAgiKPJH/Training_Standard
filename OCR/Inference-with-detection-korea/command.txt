@@ -1,0 +1,23 @@
+# 1. 기존 venv 삭제
+Remove-Item -Recurse -Force .venv
+
+# 2. Python 3.10로 재생성
+py -3.10 -m venv .venv
+
+# 3. paddle GPU 먼저 설치
+.venv\Scripts\pip install paddlepaddle-gpu==2.6.0 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+
+# 4. 나머지 패키지
+.venv\Scripts\pip install -r requirements.txt
+
+# 5. 사전학습 det 모델 다운로드 (인터넷 되는 PC에서 실행)
+#    -> data/det_model/ 생성됨, 내부망 PC로 복사
+.venv\Scripts\python download_models.py
+
+# 6. 커스텀 rec 모델 배치
+#    OCR/Training 에서 export 한 결과물을 data/rec_model/ 에 복사
+#    (inference.pdmodel, inference.pdiparams)
+#    en_dict.txt 도 data/ 에 복사
+
+# 7. 테스트
+.venv\Scripts\python model_handler.py

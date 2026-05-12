@@ -1,0 +1,129 @@
+{
+  "Step1": {
+    "Title": "Model & Device",
+    "Label": "Step 1: 모델 및 디바이스 설정",
+    "Parameters": {
+      "Device": {
+        "Type": "select",
+        "Label": "Device",
+        "Prameter": "hyperparameter.device",
+        "Options": [
+          {"Label": "GPU", "Value": "gpu"},
+          {"Label": "CPU", "Value": "cpu"}
+        ]
+      },
+      "GpuId": {
+        "Type": "string",
+        "Label": "GPU ID (단일: \"0\", 다중: \"0,1\")",
+        "Prameter": "hyperparameter.gpu_id",
+        "Condition": {"hyperparameter.device": "gpu"}
+      },
+      "PretrainedModel": {
+        "Type": "string",
+        "Label": "Pretrained Model Path",
+        "Prameter": "hyperparameter.pretrained_model"
+      },
+      "ResumePath": {
+        "Type": "string",
+        "Label": "Resume Path (비우면 처음부터)",
+        "Prameter": "hyperparameter.resume_path"
+      }
+    }
+  },
+  "Step2": {
+    "Title": "Dataset",
+    "Label": "Step 2: 데이터셋 경로 설정",
+    "Parameters": {
+      "RecCharDictPath": {
+        "Type": "string",
+        "Label": "Character Dict Path",
+        "Prameter": "hyperparameter.rec_char_dict_path"
+      },
+      "TrainDataDir": {
+        "Type": "string",
+        "Label": "Train Data Dir",
+        "Prameter": "hyperparameter.train_data_dir"
+      },
+      "TrainLabelFile": {
+        "Type": "string",
+        "Label": "Train Label File",
+        "Prameter": "hyperparameter.train_label_file"
+      },
+      "ValDataDir": {
+        "Type": "string",
+        "Label": "Val Data Dir",
+        "Prameter": "hyperparameter.val_data_dir"
+      },
+      "ValLabelFile": {
+        "Type": "string",
+        "Label": "Val Label File",
+        "Prameter": "hyperparameter.val_label_file"
+      },
+      "SaveDir": {
+        "Type": "string",
+        "Label": "Save Dir",
+        "Prameter": "hyperparameter.save_dir"
+      }
+    }
+  },
+  "Step3": {
+    "Title": "Hyperparameters",
+    "Label": "Step 3: 학습 하이퍼파라미터",
+    "Parameters": {
+      "EpochNum": {
+        "Type": "integer",
+        "Label": "Epoch",
+        "Prameter": "hyperparameter.epoch_num"
+      },
+      "SaveEpochStep": {
+        "Type": "integer",
+        "Label": "Save Epoch Step (0: last only)",
+        "Prameter": "hyperparameter.save_epoch_step"
+      },
+      "BatchSize": {
+        "Type": "integer",
+        "Label": "Batch Size",
+        "Prameter": "hyperparameter.batch_size"
+      },
+      "LearningRate": {
+        "Type": "float",
+        "Label": "Learning Rate",
+        "Prameter": "hyperparameter.learning_rate"
+      },
+      "MaxTextLength": {
+        "Type": "integer",
+        "Label": "Max Text Length",
+        "Prameter": "hyperparameter.max_text_length"
+      },
+      "ImageShape": {
+        "Type": "select",
+        "Label": "Image Shape [C × H × W]",
+        "Prameter": "hyperparameter.image_shape",
+        "Options": [
+          {"Label": "3 × 48 × 320  (기본)", "Value": [3, 48, 320]},
+          {"Label": "3 × 32 × 320", "Value": [3, 32, 320]},
+          {"Label": "3 × 48 × 192", "Value": [3, 48, 192]},
+          {"Label": "3 × 48 × 640", "Value": [3, 48, 640]},
+          {"Label": "3 × 64 × 256", "Value": [3, 64, 256]},
+          {"Label": "3 × 64 × 512", "Value": [3, 64, 512]}
+        ]
+      }
+    }
+  },
+  "Step4": {
+    "Title": "Options",
+    "Label": "Step 4: 추가 옵션",
+    "Parameters": {
+      "UseSpaceChar": {
+        "Type": "checkbox",
+        "Label": "Use Space Char",
+        "Prameter": "hyperparameter.use_space_char"
+      },
+      "UseGuidedTraining": {
+        "Type": "checkbox",
+        "Label": "Use Guided Training (label_ctc + label_gtc)",
+        "Prameter": "hyperparameter.use_guided_training"
+      }
+    }
+  }
+}

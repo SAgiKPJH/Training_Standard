@@ -1,0 +1,17 @@
+# PaddleOCR training requires the FULL SOURCE (pip package is inference-only)
+# Step 1. Clone PaddleOCR source:
+#   git clone https://github.com/PaddlePaddle/PaddleOCR.git -b release/2.7
+# Step 2. Set paddleocr_home in hyperparameters (or env var PADDLEOCR_HOME)
+#   "paddleocr_home": "path/to/PaddleOCR"
+
+# PaddlePaddle (install separately - not in PyPI default index)
+# GPU CUDA 11.x: pip install paddlepaddle-gpu==2.6.0 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+# GPU CUDA 12.x: pip install paddlepaddle-gpu==3.0.0 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
+# conda:         conda install paddlepaddle-gpu==2.6.0 -c paddle
+
+paddleocr==2.7.3
+setuptools
+opencv-python==4.6.0.66
+Pillow==11.3.0
+numpy==1.24.0
+PyYAML==6.0.2

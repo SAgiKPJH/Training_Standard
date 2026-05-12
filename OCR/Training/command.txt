@@ -1,0 +1,31 @@
+#테스트시
+# 1. 기존 venv 삭제
+Remove-Item -Recurse -Force .venv
+
+# 2. Python 3.10로 재생성 (설치되어 있어야 함)
+py -3.10 -m venv .venv
+
+# 3. PaddleOCR 소스 클론 (학습에만 필요)
+git clone https://github.com/PaddlePaddle/PaddleOCR.git -b release/2.7
+
+# 4. paddlepaddle-gpu 설치 (CUDA 11.x 기준)
+.venv\Scripts\pip install paddlepaddle-gpu==2.6.0 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+
+# 5. 나머지 패키지 설치
+.venv\Scripts\pip install -r requirements.txt
+
+# 6. 사전학습 모델 다운로드 (en_PP-OCRv3_rec_train)
+New-Item -ItemType Directory -Force data\pretrained
+Invoke-WebRequest -Uri "https://paddleocr.bj.bcebos.com/PP-OCRv3/english/en_PP-OCRv3_rec_train.tar" -OutFile "data\pretrained\en_PP-OCRv3_rec_train.tar"
+tar -xf "data\pretrained\en_PP-OCRv3_rec_train.tar" -C "data\pretrained\"
+
+# 7. 샘플 데이터 생성
+.venv\Scripts\python ..\create_sample_data.py
+
+# 8. 학습 실행
+.venv\Scripts\python ocr_recognition_local.py
+
+# 9. 추론 모델 변환 (학습 완료 후)
+# ocr_export_local.py 의 "checkpoint" 를 원하는 epoch 파일로 수정 후 실행
+# 예: "output/iter_epoch_100" → output/inference/inference.pdmodel + .pdiparams 생성
+.venv\Scripts\python ocr_export_local.py

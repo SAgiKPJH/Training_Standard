@@ -1,0 +1,20 @@
+{
+  "pretrained_model": "data/pretrained/en_PP-OCRv3_rec_train/best_accuracy",
+  "resume_path": "",
+  "rec_char_dict_path": "data/en_dict.txt",
+  "save_dir": "output/",
+  "train_data_dir": "data/",
+  "train_label_file": "data/train_labels.txt",
+  "val_data_dir": "data/",
+  "val_label_file": "data/val_labels.txt",
+  "image_shape": [3, 48, 320],
+  "max_text_length": 50,
+  "batch_size": 64,
+  "epoch_num": 100,
+  "save_epoch_step": 10,
+  "learning_rate": 0.0005,
+  "use_space_char": false,
+  "use_guided_training": false,
+  "device": "gpu",
+  "gpu_id": "0"
+}
