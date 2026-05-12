@@ -1,0 +1,12 @@
+# PaddlePaddle (install separately - not in PyPI default index)
+# GPU CUDA 11.x: pip install paddlepaddle-gpu==2.6.0 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+# GPU CUDA 12.x: pip install paddlepaddle-gpu==3.0.0 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
+# conda:         conda install paddlepaddle-gpu==2.6.0 -c paddle
+
+# OCR
+paddleocr==2.7.3
+
+# Vision
+opencv-python==4.6.0.66
+Pillow==11.3.0
+numpy==1.24.0

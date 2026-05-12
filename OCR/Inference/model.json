@@ -1,0 +1,9 @@
+{
+  "rec_model_dir": "data/rec_model",
+  "rec_char_dict_path": "data/en_dict.txt",
+  "max_text_length": 50,
+  "text_thresh": 0.9,
+  "use_gpu": true,
+  "gpu_id": 0,
+  "test_image": "data/test_image.png"
+}

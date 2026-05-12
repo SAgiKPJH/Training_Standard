@@ -1,10 +1,104 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
-__pypackages__/
+*.egg-info/
+dist/
+build/
+.Python
+env/
+venv/
+ENV/
 .venv/
-__pycache__/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Models & Weights
 *.pth
+*.pt
+*.h5
+*.pb
+*.onnx
+*.pkl
+*.pickle
+*.model
+
+# Data & Logs
 *.csv
+*.xlsx
+*.xls
+data/
+dataset/
+log/
+logs/
+*.log
+output/
+results/
+checkpoints/
+
+# Images (dataset & visualization)
 *.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+
+# Temporary files
+temp/
+tmp/
+.temp/
+*.tmp
+*.temp
+*_temp.py
+
+# Archives
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# VS Code workspace
+*.code-workspace
+.vscode-server/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Node (if applicable)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Misc
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+dist/
+build/

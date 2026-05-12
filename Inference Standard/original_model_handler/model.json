@@ -1,4 +1,4 @@
 {
-  "model_file": "model.pth",
+  "model_file": "data/model.pth",
   "device": "cpu"
 }

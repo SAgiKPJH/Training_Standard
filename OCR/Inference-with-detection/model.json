@@ -1,0 +1,14 @@
+{
+  "det_model_dir": "data/det_model",
+  "cls_model_dir": "data/cls_model",
+  "rec_model_dir": "data/rec_model",
+  "rec_char_dict_path": "data/en_dict.txt",
+  "use_angle_cls": false,
+  "det_db_box_thresh": 0.3,
+  "det_db_unclip_ratio": 2.3,
+  "max_text_length": 50,
+  "text_thresh": 0.9,
+  "use_gpu": true,
+  "gpu_id": 0,
+  "test_image": "data/image.png"
+}
