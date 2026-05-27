@@ -18,10 +18,11 @@ class Tensorflow_TrainingBuilder:
         self.__iteration_start_time = None
         self.__epoch_start_time = None
 
-    def initialize(self, epoch_total: int, using_amp, device: str = '/cpu:0'):
+    def initialize(self, epoch_total: int, using_amp, device: str = '/cpu:0', loss_eps: float = 0.0):
         self.__epoch_total = epoch_total
         self.__device = device
         self.__using_amp = using_amp
+        self.__loss_eps = float(loss_eps)
         if using_amp:
             tf.keras.mixed_precision.set_global_policy('mixed_float16')
         return self
@@ -111,6 +112,8 @@ class Tensorflow_TrainingBuilder:
         with tf.GradientTape() as tape:
             outputs = self.__model(inputs, training=True)
             loss = self.__criterion(labels, outputs)
+            if self.__loss_eps > 0:
+                loss = loss + self.__loss_eps
         gradients = tape.gradient(loss, self.__model.trainable_variables)
         self.__optimizer.apply_gradients(zip(gradients, self.__model.trainable_variables))
         return loss

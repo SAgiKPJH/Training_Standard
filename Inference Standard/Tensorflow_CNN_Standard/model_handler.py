@@ -36,6 +36,10 @@ class ModelHandler:
             self.__input_size = label_info_data.get('input_size', 299)
             self.__label_info = label_info_data.get('label_info', {})
 
+    @property
+    def input_size(self):
+        return self.__input_size
+
     def __preprocess(self, image):
         """이미지 전처리: resize + normalize"""
         if image.ndim == 2:
@@ -71,13 +75,22 @@ class ModelHandler:
 
 if __name__ == "__main__":
     import cv2
-    test_data_path = "data/image.png"
-    test_data = cv2.imread(test_data_path, 1)
+    import numpy as np
+
+    handler = ModelHandler(None, None)
+
+    test_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "image.png")
+    test_data = cv2.imread(test_data_path, 1) if os.path.exists(test_data_path) else None
+
+    if test_data is None:
+        size = handler.input_size
+        print(f"[WARN] Test image not found at {test_data_path}. Generating random image ({size}x{size}).")
+        test_data = np.random.randint(0, 256, (size, size, 3), dtype=np.uint8)
+
     test_data_pickle = pickle.dumps(test_data)
 
     # =================================================================== #
 
-    handler = ModelHandler(None, None)
     inference_result, context = handler(test_data_pickle, None)
 
     # =================================================================== #

@@ -53,19 +53,25 @@ class ModelHandler:
         return pickle.dumps(output), context
 
     def test(self):
-        if not os.path.exists(self._test_image_path):
-            raise FileNotFoundError(f"테스트 이미지를 찾을 수 없습니다: {self._test_image_path}")
+        image = None
+        if os.path.exists(self._test_image_path):
+            image = cv2.imread(self._test_image_path, cv2.IMREAD_COLOR)
 
-        image = cv2.imread(self._test_image_path, cv2.IMREAD_COLOR)
         if image is None:
-            raise ValueError(f"이미지를 읽을 수 없습니다: {self._test_image_path}")
+            import numpy as np
+            size = self._inference.input_size
+            print(f"[WARN] Test image not found at {self._test_image_path}. Generating random image ({size}x{size}).")
+            image = np.random.randint(0, 256, (size, size, 3), dtype=np.uint8)
+            image_source = "random"
+        else:
+            image_source = self._test_image_path
 
         start = time.perf_counter()
         result_bytes, _ = self(pickle.dumps(image), None)
         elapsed_ms = (time.perf_counter() - start) * 1000
 
         results = pickle.loads(result_bytes)
-        print(f"[test] image : {self._test_image_path}")
+        print(f"[test] image : {image_source}")
         print(f"[test] elapsed: {elapsed_ms:.1f} ms")
         print("[test] results:")
         for item in results:

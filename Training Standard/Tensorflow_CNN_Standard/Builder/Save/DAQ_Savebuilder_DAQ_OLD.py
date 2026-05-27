@@ -1,13 +1,10 @@
 import os
-import io
 import json
-import numpy as np
-from urllib.parse import urlparse
 from typing import Dict, Any, Optional
 import mpp
 
 """
-DAQ OLD 방식의 SaveBuilder (TensorFlow).
+DAQ OLD 방식의 SaveBuilder.
 기존 train_recipe.py의 저장 경로 패턴을 따릅니다:
   - 모델: {result_uri}/epoch_{N}/model/model.h5
   - CSV:  {result_uri}/epoch_{N}/train_loss_csv/train_loss_csv.csv
@@ -83,7 +80,7 @@ class DAQ_SaveBuilder_DAQ_OLD:
         return self
 
     def save_model(self, file_full_path: str = None, model=None, epoch: int = None):
-        """OLD 방식: epoch_{N}/model/model.h5 경로에 H5 포맷으로 저장"""
+        """OLD 방식 경로 패턴 + mpp.daq.object_service.upload_model로 저장"""
         if model is None:
             raise ValueError("model must not be None")
 
@@ -93,41 +90,46 @@ class DAQ_SaveBuilder_DAQ_OLD:
             else:
                 file_full_path = "model.h5"
 
+        # PyTorch 모델이면 확장자를 .pth로 변경 (.h5는 Keras 전용)
+        if hasattr(model, 'state_dict') and file_full_path.endswith('.h5'):
+            file_full_path = file_full_path[:-3] + '.pth'
+
         save_uri = f"{self.__save_url}/{file_full_path}"
-        self._upload_model_h5(model, save_uri)
+
+        # TensorFlow/Keras 모델은 H5에 inference_info를 직접 내장한 후 업로드
+        is_tf_model = hasattr(model, 'trainable_variables') and not hasattr(model, 'state_dict')
+        if is_tf_model and file_full_path.endswith('.h5'):
+            self._upload_tensorflow_model_h5(model, save_uri)
+        else:
+            mpp.daq.object_service.upload_model(model, uri=save_uri, inference_info=self.__inference_info, channel=self.__operation_channel, access_token=self.__access_token, chunk_size=self.__chunk_size)
+
         self._register_saved_file(file_full_path, file_type='model')
         return self
 
-    def _upload_model_h5(self, model, uri: str):
-        """기존 train_recipe.py의 upload_model 방식으로 H5 저장"""
+    def _upload_tensorflow_model_h5(self, model, save_uri: str):
+        """TF 모델을 H5로 저장 → inference_info attrs 추가 → upload_object."""
+        import io
         import h5py
-        from tensorflow import keras
+        import tempfile
 
-        parsed_uri = urlparse(uri)
-        extension = os.path.splitext(parsed_uri.path)[1]
+        with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as tmp:
+            tmp_path = tmp.name
 
-        if extension != ".h5":
-            extension = ".h5"
-            uri = os.path.splitext(uri)[0] + ".h5"
+        try:
+            model.save(tmp_path, save_format='h5')
 
-        model_bytes_io = io.BytesIO()
-        with h5py.File(model_bytes_io, 'w') as h5file:
-            keras.models.save_model(model, h5file, save_format="h5")
-            if self.__inference_info:
+            if self.__inference_info is not None:
                 inference_info_json = json.dumps(self.__inference_info, ensure_ascii=False)
-                extra_info = h5file.create_group("extra_info")
-                extra_info.attrs["inference_info"] = inference_info_json
+                with h5py.File(tmp_path, 'a') as f:
+                    f.attrs['inference_info'] = inference_info_json
 
-        parts_scheme = parsed_uri.scheme
-        if parts_scheme.lower() == "object":
-            uri_path, fileinfo = os.path.split(uri)
+            with open(tmp_path, 'rb') as f:
+                stream = io.BufferedReader(io.BytesIO(f.read()))
+
+            uri_path, fileinfo = os.path.split(save_uri)
             filename, ext = os.path.splitext(fileinfo)
-
-            model_bytes_io.seek(0)
-            model_reader_buffer = io.BufferedReader(model_bytes_io)
-
             mpp.daq.object_service.upload_object(
-                stream=model_reader_buffer,
+                stream=stream,
                 filename=filename,
                 extension=ext,
                 uri=uri_path,
@@ -135,12 +137,11 @@ class DAQ_SaveBuilder_DAQ_OLD:
                 access_token=self.__access_token,
                 chunk_size=self.__chunk_size
             )
-        else:
-            save_folder = os.path.dirname(uri)
-            if save_folder and not os.path.exists(save_folder):
-                os.makedirs(save_folder)
-            with open(uri, 'wb') as f:
-                f.write(model_bytes_io.getvalue())
+        finally:
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
 
     def save_file(self, file, file_full_path: str):
         if not isinstance(file_full_path, str):
@@ -171,9 +172,11 @@ class DAQ_SaveBuilder_DAQ_OLD:
         metric_names = list(self.__metrics.keys())
         if not metric_names:
             return [[]]
+
         max_length = max((len(lst) for lst in self.__metrics.values()), default=0)
         header = metric_names
         result = [header]
+
         for idx in range(max_length):
             row = []
             for name in metric_names:
@@ -181,16 +184,20 @@ class DAQ_SaveBuilder_DAQ_OLD:
                 value = lst[idx] if idx < len(lst) else None
                 row.append('' if value is None else value)
             result.append(row)
+
         return result
 
     def _register_saved_file(self, path: str, file_type: str = 'file') -> None:
         directory = os.path.dirname(path)
         filename = os.path.basename(path)
+
         if directory not in self.__saved_files:
             self.__saved_files[directory] = []
+
         file_info = {"name": filename, "type": file_type}
         existing_file = next((f for f in self.__saved_files[directory]
                             if f["name"] == filename), None)
+
         if existing_file:
             existing_file.update(file_info)
         else:

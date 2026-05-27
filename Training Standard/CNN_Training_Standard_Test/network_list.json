@@ -75,7 +75,7 @@
     {"name": "vit_b_32", "input_size": 224},
     {"name": "vit_l_16", "input_size": 224},
     {"name": "vit_l_32", "input_size": 224},
-    {"name": "vit_h_14", "input_size": 518},
+    {"name": "vit_h_14", "input_size": 224},
     {"name": "maxvit_t", "input_size": 224},
     {"name": "alexnet", "input_size": 224}
   ],

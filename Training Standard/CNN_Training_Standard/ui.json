@@ -156,7 +156,8 @@
       "Epoch": { "Type": "integer", "Label": "Epoch", "Prameter": "hyperparameter.epoch"},
       "SaveEpoch": { "Type": "integer", "Label": "Save Epoch (0:last_only)", "Prameter": "hyperparameter.save_epoch"},
       "BatchSize": { "Type": "integer", "Label": "Batch Size", "Prameter": "hyperparameter.batch_size"},
-      "LearningRate": { "Type": "float", "Label": "Learning Rate", "Prameter": "hyperparameter.lr"}
+      "LearningRate": { "Type": "float", "Label": "Learning Rate", "Prameter": "hyperparameter.lr"},
+      "InputSize": { "Type": "integer", "Label": "Input Size (기본값 자동 설정됨)", "Prameter": "hyperparameter.input_size"}
     }
   },
   "Step3": {
@@ -193,6 +194,11 @@
           {"Label": "CosineEmbeddingLoss", "Value": "CosineEmbeddingLoss"},
           {"Label": "LabelSmoothingCrossEntropy", "Value": "LabelSmoothingCrossEntropy"}
         ]
+      },
+      "LossEps": {
+        "Type": "float",
+        "Label": "Loss Epsilon (NaN 방지, 0=off, e.g. 1e-4)",
+        "Prameter": "hyperparameter.loss_eps"
       }
     }
   },

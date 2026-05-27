@@ -34,6 +34,10 @@ class ModelHandler:
             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
         ])
 
+    @property
+    def input_size(self):
+        return self.__input_size
+
     def __call__(self, data, context):
         data = pickle.loads(data)
 
@@ -64,13 +68,22 @@ class ModelHandler:
 
 if __name__ == "__main__":
     import cv2
-    test_data_path = "data/image_line.png"
-    test_data = cv2.imread(test_data_path, 1)
+    import numpy as np
+
+    handler = ModelHandler(None, None)
+
+    test_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "image_line.png")
+    test_data = cv2.imread(test_data_path, 1) if os.path.exists(test_data_path) else None
+
+    if test_data is None:
+        size = handler.input_size
+        print(f"[WARN] Test image not found at {test_data_path}. Generating random image ({size}x{size}).")
+        test_data = np.random.randint(0, 256, (size, size, 3), dtype=np.uint8)
+
     test_data_pickle = pickle.dumps(test_data)
 
     # =================================================================== #
 
-    handler = ModelHandler(None, None)
     inference_result, context = handler(test_data_pickle, None)
 
     # =================================================================== #

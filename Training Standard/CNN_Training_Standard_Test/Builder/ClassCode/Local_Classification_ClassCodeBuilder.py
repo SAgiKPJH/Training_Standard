@@ -34,7 +34,16 @@ class Local_Classification_ClassCodeBuilder:
         # Get class directories
         class_dirs = [d for d in os.listdir(dataset_path)
                      if os.path.isdir(os.path.join(dataset_path, d))]
-        class_dirs.sort()  # Sort for consistent ordering
+
+        # 숫자 기준 정렬 (폴더명 prefix가 숫자면 int로, 아니면 문자열)
+        def _sort_key(name):
+            prefix = name.split('_')[0] if '_' in name else name
+            try:
+                return (0, int(prefix), name)
+            except ValueError:
+                return (1, 0, name)
+
+        class_dirs.sort(key=_sort_key)
 
         num_classes = len(class_dirs)
         label_info = {"label_count": num_classes}

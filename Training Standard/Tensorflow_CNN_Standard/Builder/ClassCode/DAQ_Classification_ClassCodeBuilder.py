@@ -8,28 +8,28 @@ class DAQ_Classification_ClassCodeBuilder:
         self.__label_info = None
         self.__class_code_info = None
         self.__num_classes = None
-
+        
         self.__operation_channel = None
         self.__access_token = None
-
+    
     def get_label_info(self):
         return self.__label_info
-
+    
     def get_class_code_info(self):
         return self.__class_code_info
 
     def get_class_count(self):
         return self.__num_classes
-
+    
     def init_url_info(self, operation_channel, access_token):
         self.__operation_channel = operation_channel
         self.__access_token = access_token
         return self
-
+    
     def init_label_data(self, gt_dataset_id):
         class_code_set_id = self._fetch_class_code_set_id(gt_dataset_id)
         label_info, class_code_info, num_classes = self._build_label_info(class_code_set_id)
-
+        
         self.__label_info = label_info
         self.__class_code_info = class_code_info
         self.__num_classes = num_classes
@@ -60,6 +60,7 @@ class DAQ_Classification_ClassCodeBuilder:
             metadata=[('authorization', f'Bearer {self.__access_token}')])
 
         class_info = response.class_code_sets[0].class_codes
+        class_info = sorted(class_info, key=lambda c: int(c.code))
         num_classes = len(class_info)
         label_info = {"label_count": num_classes}
         class_code_info = {class_code.code: i for i, class_code in enumerate(class_info)}
@@ -79,6 +80,6 @@ class DAQ_Classification_ClassCodeBuilder:
             label_info[f'label_{i}'] = {"code": i, "name": class_code}
 
         return label_info, class_code_info, num_classes
-
+    
     def build(self):
         return self

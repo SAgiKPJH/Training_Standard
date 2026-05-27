@@ -2,6 +2,7 @@ import json
 
 parameters = '''{
     "hyperparameter":{
+        "framework" : "pytorch",
         "network_name" : "efficientnet_b0",
         "epoch" : 20,
         "save_epoch" : 1,
@@ -15,14 +16,16 @@ parameters = '''{
         "using_gpu" : true,
         "using_amp" : true,
         "train_ratio" : 0.8,
-        "validation_save_random" : false,
-        "debug" : false
+        "validation_save_random" : false
     }
 }'''
 
 class Json_HyperparameterBuilder:
     def __init__(self, json_parameter = parameters):
         self.__hyperparams = json.loads(json_parameter)
+
+    def get_framework(self):
+        return self.__hyperparams.get('framework', 'pytorch')
 
     def get_train_ratio(self):
         return self.__hyperparams['train_ratio']
@@ -98,17 +101,19 @@ class Json_HyperparameterBuilder:
     def get_daq_old_path(self):
         return self.__hyperparams.get('daq_old_path', False)
 
-    def get_resume_path(self):
-        return self.__hyperparams.get('resume_path', '')
-
     def get_augmentation(self):
         return self.__hyperparams.get('augmentation', {})
 
+    def get_loss_eps(self):
+        """Loss에 더할 epsilon 값. 0이면 미적용. NaN/underflow 방지용."""
+        return float(self.__hyperparams.get('loss_eps', 0))
+
     def get_device(self):
-        if self.get_using_gpu():
-            return '/gpu:0'
+        fw = self.get_framework()
+        if fw == 'pytorch':
+            return 'cuda' if self.get_using_gpu() else 'cpu'
         else:
-            return '/cpu:0'
+            return '/gpu:0' if self.get_using_gpu() else '/cpu:0'
 
     def build(self):
         return self

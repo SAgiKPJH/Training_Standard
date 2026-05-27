@@ -60,6 +60,7 @@ class DAQ_Classification_ClassCodeBuilder:
             metadata=[('authorization', f'Bearer {self.__access_token}')])
 
         class_info = response.class_code_sets[0].class_codes
+        class_info = sorted(class_info, key=lambda c: int(c.code))
         num_classes = len(class_info)
         label_info = {"label_count": num_classes}
         class_code_info = {class_code.code: i for i, class_code in enumerate(class_info)}

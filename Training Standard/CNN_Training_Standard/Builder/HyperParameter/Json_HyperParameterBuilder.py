@@ -104,6 +104,10 @@ class Json_HyperparameterBuilder:
     def get_augmentation(self):
         return self.__hyperparams.get('augmentation', {})
 
+    def get_loss_eps(self):
+        """Loss에 더할 epsilon 값. 0이면 미적용. NaN/underflow 방지용."""
+        return float(self.__hyperparams.get('loss_eps', 0))
+
     def get_device(self):
         fw = self.get_framework()
         if fw == 'pytorch':

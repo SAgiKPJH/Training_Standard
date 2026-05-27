@@ -72,10 +72,11 @@ class Tensorflow_TrainingBuilder_Debug:
     # ------------------------------------------------------------------
     # Builder API
     # ------------------------------------------------------------------
-    def initialize(self, epoch_total: int, using_amp, device: str = '/cpu:0'):
+    def initialize(self, epoch_total: int, using_amp, device: str = '/cpu:0', loss_eps: float = 0.0):
         self.__epoch_total = epoch_total
         self.__device = device
         self.__using_amp = using_amp
+        self.__loss_eps = float(loss_eps)
         if using_amp:
             tf.keras.mixed_precision.set_global_policy('mixed_float16')
         return self
@@ -223,6 +224,8 @@ class Tensorflow_TrainingBuilder_Debug:
                 self._log_logit_distribution(outputs, labels)
 
             loss = self.__criterion(labels, outputs)
+            if self.__loss_eps > 0:
+                loss = loss + self.__loss_eps
 
         if do_log:
             # 기본 loss 정보

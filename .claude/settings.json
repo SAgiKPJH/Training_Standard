@@ -6,5 +6,10 @@
         "command": "python \"d:/Code/Training_Standard/.claude/hooks/check_code.py\""
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python -c ':*)"
+    ]
   }
 }

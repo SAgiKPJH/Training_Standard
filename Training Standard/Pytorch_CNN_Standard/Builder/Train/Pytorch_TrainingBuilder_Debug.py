@@ -116,10 +116,11 @@ class Pytorch_TrainingBuilder_Debug:
     # ------------------------------------------------------------------
     # Builder API
     # ------------------------------------------------------------------
-    def initialize(self, epoch_total: int, using_amp, device: str = 'cpu'):
+    def initialize(self, epoch_total: int, using_amp, device: str = 'cpu', loss_eps: float = 0.0):
         self.__epoch_total = epoch_total
         self.__device = device
         self.__using_amp = using_amp
+        self.__loss_eps = float(loss_eps)
         try:
             self.__scaler = torch.amp.GradScaler(self.__device, enabled=using_amp)
         except (TypeError, AttributeError):
@@ -280,6 +281,8 @@ class Pytorch_TrainingBuilder_Debug:
                 self._log_logit_distribution(output, labels)
 
             loss = self.__criterion(output, labels)
+            if self.__loss_eps > 0:
+                loss = loss + self.__loss_eps
 
         if do_log:
             # 기본 loss 정보

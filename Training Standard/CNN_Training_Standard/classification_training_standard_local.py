@@ -17,7 +17,8 @@ parameters = '''{
         "train_ratio" : 0.8,
         "validation_save_random" : false,
         "debug" : false,
-        "daq_old_path" : false
+        "daq_old_path" : false,
+        "loss_eps" : 0
     }
 }'''
 import json
@@ -108,7 +109,7 @@ class SaveHook(TrainHook):
             if self.__daq_old_path:
                 self.__save_builder.save_model(epoch=epoch, model=model)
             else:
-                ext = ".pth" if framework == "pytorch" else ""
+                ext = ".pth" if framework == "pytorch" else ".h5"
                 self.__save_builder.save_model(f"{epoch}/model{ext}", model=model)
 
         # Best 모델 저장
@@ -119,7 +120,7 @@ class SaveHook(TrainHook):
             if self.__daq_old_path:
                 self.__save_builder.save_model(file_full_path="best/model/model.h5", model=model)
             else:
-                ext = ".pth" if framework == "pytorch" else ""
+                ext = ".pth" if framework == "pytorch" else ".h5"
                 self.__save_builder.save_model(f"best/model{ext}", model=model)
 
     def training_start(self):
@@ -149,6 +150,7 @@ try:
                             epoch_total=hyperparameter_builder.get_epoch(),
                             device=hyperparameter_builder.get_device(),
                             using_amp=hyperparameter_builder.get_using_amp(),
+                            loss_eps=hyperparameter_builder.get_loss_eps(),
                         ).init_model(
                             model=model
                         ).init_optimizer(

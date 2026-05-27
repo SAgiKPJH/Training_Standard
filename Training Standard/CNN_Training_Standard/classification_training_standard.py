@@ -27,7 +27,8 @@ parameters = '''{
         "train_ratio" : 0.8,
         "validation_save_random" : false,
         "debug" : false,
-        "daq_old_path" : false
+        "daq_old_path" : false,
+        "loss_eps" : 0
     },
     "authentication": {
         "operation_service_address": "",
@@ -53,12 +54,6 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')
 from Builder import Json_HyperparameterBuilder
 from Builder import get_framework_builders, get_daq_framework_builders
 from Builder import TrainHook
-
-# framework 미리 파싱
-_params = json.loads(parameters)
-_framework = _params['hyperparameter'].get('framework', 'pytorch')
-logger.info(f"Framework: {_framework}")
-
 
 class SaveHook(TrainHook):
     def __init__(self, save_epoch, logger, bucket_url, operation_channel, access_token, chunk_size, framework, daq_old_path=False, label_info=None, etc=None):
@@ -110,11 +105,12 @@ class SaveHook(TrainHook):
         else:
             self.__save_builder.save_csv_metric()
 
+        ext = ".pth" if self.__framework == "pytorch" else ".h5"
+
         if (self.__save_epoch > 0 and epoch % self.__save_epoch == 0) or (self.__save_epoch == 0 and epoch == total_epoch):
             if self.__daq_old_path:
                 self.__save_builder.save_model(epoch=epoch, model=model)
             else:
-                ext = ".pth" if self.__framework == "pytorch" else ""
                 self.__save_builder.save_model(f"{epoch}/model{ext}", model=model)
 
         # Best 모델 저장
@@ -123,9 +119,8 @@ class SaveHook(TrainHook):
             self.__best_loss = loss
             logger.info(f"  ★ Best model updated (loss: {loss:.6f})")
             if self.__daq_old_path:
-                self.__save_builder.save_model(file_full_path="best/model/model.h5", model=model)
+                self.__save_builder.save_model(file_full_path=f"best/model/model{ext}", model=model)
             else:
-                ext = ".pth" if self.__framework == "pytorch" else ""
                 self.__save_builder.save_model(f"best/model{ext}", model=model)
 
     def training_start(self):
@@ -140,6 +135,7 @@ def RecipeRun(**kwargs):
     from Builder import DAQ_Classification_ClassCodeBuilder
 
     framework = kwargs['hyperparameter'].get('framework', 'pytorch')
+    logger.info(f"Framework: {framework}")
     Model, _, TrainingBuilder, TrainingBuilderDebug = get_framework_builders(framework)
     DAQDatasetBuilder = get_daq_framework_builders(framework)
 
@@ -198,6 +194,7 @@ def RecipeRun(**kwargs):
                                 epoch_total=hyperparameter_builder.get_epoch(),
                                 device=hyperparameter_builder.get_device(),
                                 using_amp=hyperparameter_builder.get_using_amp(),
+                                loss_eps=hyperparameter_builder.get_loss_eps(),
                            ).init_model(
                                 model=model
                            ).init_optimizer(

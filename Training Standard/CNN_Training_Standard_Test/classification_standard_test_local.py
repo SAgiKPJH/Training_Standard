@@ -20,13 +20,16 @@ from Builder import Local_Classification_ClassCodeBuilder
 from Builder import get_framework_builders
 from Builder import TrainHook
 
-# network_list.json에서 모델 목록 로드
-_list_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'network_list.json')
-with open(_list_path, 'r', encoding='utf-8') as f:
-    _network_list = json.load(f)
+def load_network_list(filename='network_list.json'):
+    """네트워크 목록 로드"""
+    list_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+    with open(list_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    pytorch = [(m['name'], m['input_size']) for m in data.get('pytorch', [])]
+    tensorflow = [(m['name'], m['input_size']) for m in data.get('tensorflow', [])]
+    return pytorch, tensorflow
 
-PYTORCH_MODELS = [(m['name'], m['input_size']) for m in _network_list['pytorch']]
-TENSORFLOW_MODELS = [(m['name'], m['input_size']) for m in _network_list['tensorflow']]
+PYTORCH_MODELS, TENSORFLOW_MODELS = load_network_list('network_list.json')
 
 
 class MinimalSaveHook(TrainHook):

@@ -191,21 +191,29 @@ class Local_SaveBuilder:
             self._save_model_with_pickle(model, save_path)
 
     def _save_tensorflow_model(self, model, save_path: str, extension: str):
-        """TensorFlow 모델을 저장합니다."""
+        """TensorFlow 모델을 저장합니다. inference_info는 모델에 내장."""
         import tensorflow as tf
+        inference_info_json = None
         if self.__inference_info is not None:
             inference_info_json = json.dumps(self.__inference_info, ensure_ascii=False)
+            # SavedModel/keras 포맷에서는 tf.Variable로 내장 가능
             model.inference_info = tf.Variable(inference_info_json, trainable=False, dtype=tf.string, name="inference_info")
 
         if extension == '.h5':
             model.save(save_path, save_format='h5')
+            # H5는 tf.Variable을 직접 저장하지 않으므로, h5py로 attribute 직접 기록
+            if inference_info_json is not None:
+                try:
+                    import h5py
+                    with h5py.File(save_path, 'a') as f:
+                        f.attrs['inference_info'] = inference_info_json
+                except Exception:
+                    pass
         elif extension == '.keras':
             model.save(save_path, save_format='keras')
         else:
             saved_model_path = save_path.replace('.pth', '')
             model.save(saved_model_path, save_format='tf')
-
-        self._save_inference_info_as_json(save_path)
 
     def _save_pytorch_model(self, model, save_path: str, extension: str):
         """PyTorch 모델을 저장합니다."""

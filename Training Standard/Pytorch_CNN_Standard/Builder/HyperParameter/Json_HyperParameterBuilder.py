@@ -2,6 +2,7 @@ import json
 
 parameters = '''{
     "hyperparameter":{
+        "framework" : "pytorch",
         "network_name" : "efficientnet_b0",
         "epoch" : 20,
         "save_epoch" : 1,
@@ -23,53 +24,54 @@ class Json_HyperparameterBuilder:
     def __init__(self, json_parameter = parameters):
         self.__hyperparams = json.loads(json_parameter)
 
+    def get_framework(self):
+        return self.__hyperparams.get('framework', 'pytorch')
+
     def get_train_ratio(self):
         return self.__hyperparams['train_ratio']
-    
+
     def get_batch_size(self)->int:
         return int(self.__hyperparams['batch_size'])
-    
+
     def get_validation_save_random(self):
         return self.__hyperparams.get('validation_save_random', False)
-    
+
     def get_optimizer(self):
         keys = ['optimizer', 'optimizer_name']
         for key in keys:
             if key in self.__hyperparams:
                 return self.__hyperparams[key]
-
         raise KeyError(f"Optimizer not found. Tried keys: {', '.join(keys)}")
-    
+
     def get_learning_rate(self):
         keys = ['lr', 'learningRate', 'LearningRate', 'Learningrate']
         for key in keys:
             if key in self.__hyperparams:
                 return self.__hyperparams[key]
-
         raise KeyError(f"Learning rate not found. Tried keys: {', '.join(keys)}")
-    
+
     def get_input_size(self):
         return self.__hyperparams['input_size']
-    
+
     def get_epoch(self)->int:
         return int(self.__hyperparams['epoch'])
-    
+
     def get_save_epoch(self)->int:
         return int(self.__hyperparams['save_epoch'])
-    
+
     def get_using_amp(self):
         return self.__hyperparams['using_amp']
-    
+
     def get_early_stop_patience(self):
         keys = ['earlyStopPatience']
         for key in keys:
             if key in self.__hyperparams:
                 return self.__hyperparams[key]
         return 0
-    
+
     def get_network_name(self):
         return self.__hyperparams['network_name']
-    
+
     def get_reduce_learning_rate_patience(self):
         keys = ['reduceLRPatience']
         for key in keys:
@@ -82,35 +84,36 @@ class Json_HyperparameterBuilder:
         for key in keys:
             if key in self.__hyperparams:
                 return self.__hyperparams[key]
-            
         return 'CrossEntropyLoss'
-    
+
     def get_normalize_mean(self):
         return self.__hyperparams['normalize_mean']
-    
+
     def get_normalize_stdev(self):
         return self.__hyperparams['normalize_stdev']
-    
+
     def get_using_gpu(self):
         return self.__hyperparams['using_gpu']
-    
+
     def get_debug(self):
         return self.__hyperparams.get('debug', False)
 
     def get_daq_old_path(self):
         return self.__hyperparams.get('daq_old_path', False)
 
-    def get_resume_path(self):
-        return self.__hyperparams.get('resume_path', '')
-
     def get_augmentation(self):
         return self.__hyperparams.get('augmentation', {})
 
+    def get_loss_eps(self):
+        """Loss에 더할 epsilon 값. 0이면 미적용. NaN/underflow 방지용."""
+        return float(self.__hyperparams.get('loss_eps', 0))
+
     def get_device(self):
-        if self.get_using_gpu():
-            return 'cuda'
+        fw = self.get_framework()
+        if fw == 'pytorch':
+            return 'cuda' if self.get_using_gpu() else 'cpu'
         else:
-            return 'cpu'
+            return '/gpu:0' if self.get_using_gpu() else '/cpu:0'
 
     def build(self):
         return self

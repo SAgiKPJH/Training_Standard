@@ -12,6 +12,7 @@ parameters = '''{
     "hyperparameter":{
         "framework" : "pytorch",
         "network_name" : "efficientnet_b0",
+        "network_list_file" : "network_list.json",
         "epoch" : 1,
         "save_epoch" : 0,
         "batch_size" : 2,
@@ -57,13 +58,14 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')
 from Builder import get_framework_builders, get_daq_framework_builders
 from Builder import TrainHook
 
-# network_list.json에서 모델 목록 로드
-_list_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'network_list.json')
-with open(_list_path, 'r', encoding='utf-8') as f:
-    _network_list = json.load(f)
-
-PYTORCH_MODELS = [(m['name'], m['input_size']) for m in _network_list['pytorch']]
-TENSORFLOW_MODELS = [(m['name'], m['input_size']) for m in _network_list['tensorflow']]
+def load_network_list(filename='network_list.json'):
+    """네트워크 목록 로드"""
+    list_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+    with open(list_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    pytorch = [(m['name'], m['input_size']) for m in data.get('pytorch', [])]
+    tensorflow = [(m['name'], m['input_size']) for m in data.get('tensorflow', [])]
+    return pytorch, tensorflow
 
 
 class MetricsSaveHook(TrainHook):
@@ -234,24 +236,28 @@ def RecipeRun(**kwargs):
     ).build()
 
     epoch = int(kwargs['hyperparameter'].get('epoch', 1))
+    list_file = kwargs['hyperparameter'].get('network_list_file', 'network_list.json')
+
+    pytorch_models, tensorflow_models = load_network_list(list_file)
 
     logger.info(f"{'='*60}")
-    logger.info(f"CNN Training Standard - DAQ Network Test (All)")
+    logger.info(f"CNN Training Standard - DAQ Network Test")
+    logger.info(f"List file: {list_file}")
     logger.info(f"Epoch: {epoch}")
-    logger.info(f"PyTorch models: {len(PYTORCH_MODELS)}")
-    logger.info(f"TensorFlow models: {len(TENSORFLOW_MODELS)}")
+    logger.info(f"PyTorch models: {len(pytorch_models)}")
+    logger.info(f"TensorFlow models: {len(tensorflow_models)}")
     logger.info(f"{'='*60}\n")
 
     dataset_cache = {}
     all_history = {}
 
     # PyTorch 테스트
-    logger.info(f"--- PyTorch ({len(PYTORCH_MODELS)} models) ---")
-    pt_results = run_framework_tests("pytorch", PYTORCH_MODELS, operation_builder, classcode_builder, dataset_cache, all_history, epoch)
+    logger.info(f"--- PyTorch ({len(pytorch_models)} models) ---")
+    pt_results = run_framework_tests("pytorch", pytorch_models, operation_builder, classcode_builder, dataset_cache, all_history, epoch)
 
     # TensorFlow 테스트
-    logger.info(f"\n--- TensorFlow ({len(TENSORFLOW_MODELS)} models) ---")
-    tf_results = run_framework_tests("tensorflow", TENSORFLOW_MODELS, operation_builder, classcode_builder, dataset_cache, all_history, epoch)
+    logger.info(f"\n--- TensorFlow ({len(tensorflow_models)} models) ---")
+    tf_results = run_framework_tests("tensorflow", tensorflow_models, operation_builder, classcode_builder, dataset_cache, all_history, epoch)
 
     # temp 폴더 정리
     for ds in dataset_cache.values():

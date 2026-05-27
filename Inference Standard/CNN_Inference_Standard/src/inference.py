@@ -33,6 +33,11 @@ class Inference:
     출력 빌드·정렬 등 공통 후처리는 infer() 가 담당한다.
     """
 
+    @property
+    def input_size(self) -> int:
+        """모델 입력 크기 (서브클래스가 self._input_size를 설정)"""
+        return getattr(self, '_input_size', 224)
+
     def infer(self, image: np.ndarray) -> list:
         """
         BGR ndarray → [{'code': ..., 'name': ..., 'score': ...}, ...] (score 내림차순)

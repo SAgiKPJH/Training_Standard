@@ -27,6 +27,7 @@ parameters = '''{
         "validation_save_random" : false,
         "debug" : false,
         "daq_old_path" : true,
+        "loss_eps" : 0,
         "resume_path" : ""
     },
     "authentication": {
@@ -192,6 +193,7 @@ def RecipeRun(**kwargs):
                                 epoch_total=hyperparameter_builder.get_epoch(),
                                 device= hyperparameter_builder.get_device(), # model.device
                                 using_amp=hyperparameter_builder.get_using_amp(),
+                                loss_eps=hyperparameter_builder.get_loss_eps(),
                            ).init_model(
                                 model=model
                            ).init_optimizer(

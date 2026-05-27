@@ -1,6 +1,6 @@
 {
   "Step1": {
-    "Title": "테스트용 - 등록된 모든 네트워크를 자동으로 1 epoch 학습 테스트",
+    "Title": "테스트용 - 등록된 모든 네트워크를 자동으로 학습 테스트",
     "Label": "Test Settings",
     "Parameters": {
       "Framework": { "Type": "select", "Prameter": "hyperparameter.framework", "Options": [
@@ -8,6 +8,16 @@
         {"Label": "TensorFlow", "Value": "tensorflow"},
         {"Label": "All", "Value": "all"}
       ]},
+      "NetworkListFile": {
+        "Type": "select",
+        "Label": "Network List",
+        "Prameter": "hyperparameter.network_list_file",
+        "Options": [
+          {"Label": "전체 (network_list.json)", "Value": "network_list.json"},
+          {"Label": "백업 (network_list_all.json)", "Value": "network_list_all.json"},
+          {"Label": "실패한 것만 (network_list_fail.json)", "Value": "network_list_fail.json"}
+        ]
+      },
       "Epoch": { "Type": "integer", "Label": "Test Epoch (default: 1)", "Prameter": "hyperparameter.epoch" },
       "BatchSize": { "Type": "integer", "Label": "Batch Size (default: 2)", "Prameter": "hyperparameter.batch_size" }
     }

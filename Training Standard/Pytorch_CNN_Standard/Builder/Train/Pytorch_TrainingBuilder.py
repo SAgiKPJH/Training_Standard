@@ -8,22 +8,24 @@ from .TrainHook import TrainHook
 class Pytorch_TrainingBuilder:
     def __init__(self, logger = None):
         self.__logger = logger
-        
+
         self.__epoch_total = None
         self.__device = 'cpu'
         self.__using_amp = False
-        
+        self.__loss_eps = 0.0
+
         self.__optimizer = None
         self.__criterion = None
         self.__model = None
-        
+
         self.__iteration_start_time = None
         self.__epoch_start_time = None
 
-    def initialize(self, epoch_total:int, using_amp, device:str='cpu'):
+    def initialize(self, epoch_total:int, using_amp, device:str='cpu', loss_eps:float=0.0):
         self.__epoch_total = epoch_total
         self.__device = device
         self.__using_amp = using_amp
+        self.__loss_eps = float(loss_eps)
         try:
             self.__scaler = torch.amp.GradScaler(self.__device, enabled=using_amp)
         except (TypeError, AttributeError):
@@ -114,6 +116,9 @@ class Pytorch_TrainingBuilder:
             else:
                 output = outputs
             loss = self.__criterion(output, labels)
+            # loss eps: NaN/underflow 방지를 위해 작은 값 추가
+            if self.__loss_eps > 0:
+                loss = loss + self.__loss_eps
         self.__optimizer.zero_grad()
         self.__scaler.scale(loss).backward()
         self.__scaler.step(self.__optimizer)
