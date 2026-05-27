@@ -9,26 +9,30 @@
 ##$--
 
 parameters = '''{
-    "version" : "CNN_Training_Standard_v1.0.5",
+    "version" : "Seg_Training_Standard_v1.0.0",
     "hyperparameter":{
         "framework" : "pytorch",
-        "network_name" : "efficientnet_b0",
+        "network_name" : "deeplabv3_resnet50",
         "epoch" : 20,
-        "save_epoch" : 10,
-        "batch_size" : 16,
-        "lr" : 1e-3,
-        "optimizer_name" : "Adam",
+        "save_epoch" : 1,
+        "batch_size" : 4,
+        "lr" : 1e-2,
+        "weight_decay" : 1e-4,
+        "optimizer_name" : "SGD",
         "criterion" : "CrossEntropyLoss",
-        "input_size" : 224,
+        "input_size" : 512,
         "normalize_mean" : 0.5,
         "normalize_stdev" : 0.5,
         "using_gpu" : true,
-        "using_amp" : true,
+        "using_amp" : false,
         "train_ratio" : 0.8,
         "validation_save_random" : false,
+        "validation_save_count" : 10,
+        "output_stride" : 16,
+        "pretrained_backbone" : true,
         "debug" : false,
         "daq_old_path" : false,
-        "loss_eps" : 1e-4
+        "loss_eps" : 0
     },
     "authentication": {
         "operation_service_address": "",
@@ -55,6 +59,7 @@ from Builder import Json_HyperparameterBuilder
 from Builder import get_framework_builders, get_daq_framework_builders
 from Builder import TrainHook
 
+
 class SaveHook(TrainHook):
     def __init__(self, save_epoch, logger, bucket_url, operation_channel, access_token, chunk_size, framework, daq_old_path=False, label_info=None, etc=None):
         self.__save_epoch = save_epoch
@@ -68,27 +73,23 @@ class SaveHook(TrainHook):
         if daq_old_path:
             from Builder import DAQ_SaveBuilder_DAQ_OLD
             self.__save_builder = DAQ_SaveBuilder_DAQ_OLD(
-                    ).init_inference_info(
-                        label_info = label_info,
-                        etc=etc
-                    ).init_save_url(
-                        bucket_url= bucket_url,
-                        operation_channel= operation_channel,
-                        access_token= access_token,
-                        chunk_size= chunk_size,
-                    ).build()
+                ).init_inference_info(label_info=label_info, etc=etc
+                ).init_save_url(
+                    bucket_url=bucket_url,
+                    operation_channel=operation_channel,
+                    access_token=access_token,
+                    chunk_size=chunk_size,
+                ).build()
         else:
             from Builder import DAQ_SaveBuilder
             self.__save_builder = DAQ_SaveBuilder(
-                    ).init_inference_info(
-                        label_info = label_info,
-                        etc=etc
-                    ).init_save_url(
-                        bucket_url= bucket_url,
-                        operation_channel= operation_channel,
-                        access_token= access_token,
-                        chunk_size= chunk_size,
-                    ).build()
+                ).init_inference_info(label_info=label_info, etc=etc
+                ).init_save_url(
+                    bucket_url=bucket_url,
+                    operation_channel=operation_channel,
+                    access_token=access_token,
+                    chunk_size=chunk_size,
+                ).build()
 
     def on_epoch_end(self, total_epoch, epoch, train_loss, validation_loss, epoch_elapsed_time, model):
         self.__monitoring_builder.monitoring(total_epoch, epoch, train_loss, validation_loss, epoch_elapsed_time)
@@ -96,8 +97,6 @@ class SaveHook(TrainHook):
             "epoch": epoch,
             "train_loss": train_loss,
             "validation_loss": validation_loss,
-            "train_accuracy": 100-train_loss,
-            "validation_accuracy": 100-validation_loss if validation_loss is not None else None
         })
 
         if self.__daq_old_path:
@@ -113,7 +112,6 @@ class SaveHook(TrainHook):
             else:
                 self.__save_builder.save_model(f"{epoch}/model{ext}", model=model)
 
-        # Best 모델 저장
         loss = validation_loss if validation_loss is not None else train_loss
         if self.__best_loss is None or loss < self.__best_loss:
             self.__best_loss = loss
@@ -125,6 +123,7 @@ class SaveHook(TrainHook):
 
     def training_start(self):
         logger.info("Training Started.")
+
     def training_end(self):
         logger.info("Training Ended.")
         self.__save_builder.save_file_index()
@@ -132,16 +131,16 @@ class SaveHook(TrainHook):
 
 def RecipeRun(**kwargs):
     from Builder import Operation_Builder
-    from Builder import DAQ_Classification_ClassCodeBuilder
+    from Builder import DAQ_Segmentation_ClassCodeBuilder
 
     framework = kwargs['hyperparameter'].get('framework', 'pytorch')
     logger.info(f"Framework: {framework}")
-    Model, _, TrainingBuilder, TrainingBuilderDebug = get_framework_builders(framework)
+    Model, _, TrainingBuilder = get_framework_builders(framework)
     DAQDatasetBuilder = get_daq_framework_builders(framework)
 
     operation_builder = Operation_Builder(**kwargs).initialize().build()
 
-    classcode_builder = DAQ_Classification_ClassCodeBuilder().init_url_info(
+    classcode_builder = DAQ_Segmentation_ClassCodeBuilder().init_url_info(
         operation_channel=operation_builder.get_operation_channel(),
         access_token=operation_builder.get_access_token()
     ).init_label_data(
@@ -170,33 +169,28 @@ def RecipeRun(**kwargs):
     )
 
     if dataset_builder.success() is False:
-        if logger:logger.error(f"Dataset Build Failed")
+        if logger: logger.error("Dataset Build Failed")
         dataset_builder.temp_folder_delete()
         return None
 
     try:
         model_builder = Model().init_device(hyperparameter_builder.get_device())
-        if framework == "tensorflow":
-            model = model_builder.init_model(
-                num_classes=classcode_builder.get_class_count(),
-                network_name=hyperparameter_builder.get_network_name(),
-                input_size=hyperparameter_builder.get_input_size()
-            ).get_model()
-        else:
-            model = model_builder.init_model(
-                num_classes=classcode_builder.get_class_count(),
-                network_name=hyperparameter_builder.get_network_name()
-            ).get_model()
+        model = model_builder.init_model(
+            num_classes=classcode_builder.get_class_count(),
+            network_name=hyperparameter_builder.get_network_name(),
+            input_size=hyperparameter_builder.get_input_size(),
+            pretrained_backbone=hyperparameter_builder.get_pretrained_backbone(),
+            output_stride=hyperparameter_builder.get_output_stride(),
+        ).get_model()
 
-        SelectedTrainingBuilder = TrainingBuilderDebug if hyperparameter_builder.get_debug() else TrainingBuilder
-        training_builder = SelectedTrainingBuilder(logger
+        training_builder = TrainingBuilder(logger
                            ).initialize(
                                 epoch_total=hyperparameter_builder.get_epoch(),
                                 device=hyperparameter_builder.get_device(),
                                 using_amp=hyperparameter_builder.get_using_amp(),
                                 loss_eps=hyperparameter_builder.get_loss_eps(),
-                           ).init_model(
-                                model=model
+                                weight_decay=hyperparameter_builder.get_weight_decay(),
+                           ).init_model(model=model
                            ).init_optimizer(
                                 optimizer_name=hyperparameter_builder.get_optimizer(),
                                 lr=hyperparameter_builder.get_learning_rate()
@@ -204,18 +198,21 @@ def RecipeRun(**kwargs):
                                 criterion_name=hyperparameter_builder.get_criterion()
                            ).builder()
 
-        label_info = {'inference_info' : json.dumps({"input_size": hyperparameter_builder.get_input_size(), "label_info": classcode_builder.get_label_info()})}
+        label_info = {'inference_info': json.dumps({
+            "input_size": hyperparameter_builder.get_input_size(),
+            "label_info": classcode_builder.get_label_info()
+        })}
         savehook = SaveHook(
-                    save_epoch=hyperparameter_builder.get_save_epoch(),
-                    logger=logger,
-                    bucket_url=operation_builder.get_bucket_url(),
-                    operation_channel=operation_builder.get_operation_channel(),
-                    access_token=operation_builder.get_access_token(),
-                    chunk_size=operation_builder.get_chunk_size(),
-                    framework=framework,
-                    daq_old_path=hyperparameter_builder.get_daq_old_path(),
-                    label_info=label_info
-                   )
+            save_epoch=hyperparameter_builder.get_save_epoch(),
+            logger=logger,
+            bucket_url=operation_builder.get_bucket_url(),
+            operation_channel=operation_builder.get_operation_channel(),
+            access_token=operation_builder.get_access_token(),
+            chunk_size=operation_builder.get_chunk_size(),
+            framework=framework,
+            daq_old_path=hyperparameter_builder.get_daq_old_path(),
+            label_info=label_info
+        )
 
         training_builder.train(
             train_data_loader=dataset_builder.get_train_data_loader(),
@@ -230,12 +227,12 @@ def RecipeRun(**kwargs):
         dataset_builder.temp_folder_delete()
 
 
-if __name__ =="__main__":
+if __name__ == "__main__":
     kwargs = json.loads(parameters)
     kwargs['authentication']['operation_service_address'] = ""
     kwargs['authentication']['access_token'] = ""
     kwargs['gt_dataset']['gt_dataset_id'] = r""
     import random
-    kwargs['result']['id'] = f"test_result_volume_{random.randint(1000,9999)}"
+    kwargs['result']['id'] = f"test_result_volume_{random.randint(1000, 9999)}"
 
     RecipeRun(**kwargs)

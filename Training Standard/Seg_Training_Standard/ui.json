@@ -1,0 +1,187 @@
+{
+  "Step1": {
+    "Title": "Set Framework and Network",
+    "Label": "Step 1: Set Network",
+    "Parameters": {
+      "SetFramework": {
+         "Type": "select",
+         "Label": "Framework",
+         "Prameter": "hyperparameter.framework",
+         "Options": [
+             {"Label": "PyTorch", "Value": "pytorch"},
+             {"Label": "TensorFlow", "Value": "tensorflow"}
+         ]
+      },
+      "SetNetworkName_Pytorch": {
+         "Type": "select",
+         "Label": "Network Name (PyTorch)",
+         "Prameter": "hyperparameter.network_name",
+         "Condition": {"hyperparameter.framework": "pytorch"},
+         "Options": [
+             {"Label": "[FCN] fcn_resnet50", "Value": "fcn_resnet50", "DefaultValues": {"hyperparameter.input_size": 520}},
+             {"Label": "[FCN] fcn_resnet101", "Value": "fcn_resnet101", "DefaultValues": {"hyperparameter.input_size": 520}},
+             {"Label": "[DeepLabV3] deeplabv3_resnet50", "Value": "deeplabv3_resnet50", "DefaultValues": {"hyperparameter.input_size": 520}},
+             {"Label": "[DeepLabV3] deeplabv3_resnet101", "Value": "deeplabv3_resnet101", "DefaultValues": {"hyperparameter.input_size": 520}},
+             {"Label": "[DeepLabV3] deeplabv3_mobilenet_v3_large", "Value": "deeplabv3_mobilenet_v3_large", "DefaultValues": {"hyperparameter.input_size": 520}},
+             {"Label": "[LRASPP] lraspp_mobilenet_v3_large", "Value": "lraspp_mobilenet_v3_large", "DefaultValues": {"hyperparameter.input_size": 520}}
+         ]
+      },
+      "SetNetworkName_Tensorflow": {
+         "Type": "select",
+         "Label": "Network Name (TensorFlow)",
+         "Prameter": "hyperparameter.network_name",
+         "Condition": {"hyperparameter.framework": "tensorflow"},
+         "Options": [
+             {"Label": "[U-Net] unet", "Value": "unet", "DefaultValues": {"hyperparameter.input_size": 512}},
+             {"Label": "[DeepLabV3] deeplabv3_resnet50", "Value": "deeplabv3_resnet50", "DefaultValues": {"hyperparameter.input_size": 512}},
+             {"Label": "[DeepLabV3] deeplabv3_resnet101", "Value": "deeplabv3_resnet101", "DefaultValues": {"hyperparameter.input_size": 512}},
+             {"Label": "[DeepLabV3] deeplabv3_mobilenet_v2", "Value": "deeplabv3_mobilenet_v2", "DefaultValues": {"hyperparameter.input_size": 512}},
+             {"Label": "[DeepLabV3] deeplabv3_mobilenet_v3_large", "Value": "deeplabv3_mobilenet_v3_large", "DefaultValues": {"hyperparameter.input_size": 512}},
+             {"Label": "[DeepLabV3] deeplabv3_efficientnet_b0", "Value": "deeplabv3_efficientnet_b0", "DefaultValues": {"hyperparameter.input_size": 512}},
+             {"Label": "[DeepLabV3] deeplabv3_xception", "Value": "deeplabv3_xception", "DefaultValues": {"hyperparameter.input_size": 512}}
+         ]
+      },
+      "SetUsingGPU": {
+         "Type": "select",
+         "Label": "Using GPU",
+         "Prameter": "hyperparameter.using_gpu",
+         "Options": [
+             {"Label": "GPU", "Value": true},
+             {"Label": "CPU", "Value": false}
+         ]
+      },
+      "SetPretrainedBackbone": {
+         "Type": "select",
+         "Label": "Use Pretrained Backbone",
+         "Prameter": "hyperparameter.pretrained_backbone",
+         "Options": [
+             {"Label": "Use Pretrained (ImageNet)", "Value": true},
+             {"Label": "Train From Scratch", "Value": false}
+         ]
+      }
+    }
+  },
+  "Step2": {
+    "Title": "Set Training Hyperparameters",
+    "Label": "Step 2: Hyperparameters",
+    "Parameters": {
+      "SetEpoch": {
+         "Type": "input",
+         "Label": "Epoch",
+         "Prameter": "hyperparameter.epoch"
+      },
+      "SetSaveEpoch": {
+         "Type": "input",
+         "Label": "Save Epoch (0 = last only)",
+         "Prameter": "hyperparameter.save_epoch"
+      },
+      "SetBatchSize": {
+         "Type": "input",
+         "Label": "Batch Size",
+         "Prameter": "hyperparameter.batch_size"
+      },
+      "SetLearningRate": {
+         "Type": "input",
+         "Label": "Learning Rate",
+         "Prameter": "hyperparameter.lr"
+      },
+      "SetWeightDecay": {
+         "Type": "input",
+         "Label": "Weight Decay",
+         "Prameter": "hyperparameter.weight_decay"
+      },
+      "SetInputSize": {
+         "Type": "input",
+         "Label": "Input Size (기본값 자동 설정됨)",
+         "Prameter": "hyperparameter.input_size"
+      },
+      "SetOutputStride": {
+         "Type": "select",
+         "Label": "Output Stride",
+         "Prameter": "hyperparameter.output_stride",
+         "Options": [
+             {"Label": "8 (slower, higher resolution)", "Value": 8},
+             {"Label": "16 (faster, default)", "Value": 16}
+         ]
+      }
+    }
+  },
+  "Step3": {
+    "Title": "Optimizer and Loss",
+    "Label": "Step 3: Optimizer/Loss",
+    "Parameters": {
+      "SetOptimizer": {
+         "Type": "select",
+         "Label": "Optimizer",
+         "Prameter": "hyperparameter.optimizer_name",
+         "Options": [
+             {"Label": "SGD (recommended)", "Value": "SGD"},
+             {"Label": "Adam", "Value": "Adam"},
+             {"Label": "Adagrad", "Value": "Adagrad"}
+         ]
+      },
+      "SetCriterion": {
+         "Type": "select",
+         "Label": "Loss",
+         "Prameter": "hyperparameter.criterion",
+         "Options": [
+             {"Label": "CrossEntropyLoss", "Value": "CrossEntropyLoss"},
+             {"Label": "DiceLoss", "Value": "DiceLoss"}
+         ]
+      },
+      "SetLossEps": {
+         "Type": "input",
+         "Label": "Loss Eps (0 = off, NaN/underflow 방지)",
+         "Prameter": "hyperparameter.loss_eps"
+      },
+      "SetUsingAmp": {
+         "Type": "select",
+         "Label": "Mixed Precision (AMP)",
+         "Prameter": "hyperparameter.using_amp",
+         "Options": [
+             {"Label": "Enabled", "Value": true},
+             {"Label": "Disabled", "Value": false}
+         ]
+      }
+    }
+  },
+  "Step4": {
+    "Title": "Augmentation",
+    "Label": "Step 4: Augmentation",
+    "Parameters": {
+      "HorizontalFlip": {
+         "Type": "select",
+         "Label": "Horizontal Flip",
+         "Prameter": "hyperparameter.augmentation.horizontal_flip",
+         "Options": [
+             {"Label": "Off", "Value": false},
+             {"Label": "On", "Value": true}
+         ]
+      },
+      "VerticalFlip": {
+         "Type": "select",
+         "Label": "Vertical Flip",
+         "Prameter": "hyperparameter.augmentation.vertical_flip",
+         "Options": [
+             {"Label": "Off", "Value": false},
+             {"Label": "On", "Value": true}
+         ]
+      },
+      "Rotation": {
+         "Type": "input",
+         "Label": "Rotation (degrees, 0 = off)",
+         "Prameter": "hyperparameter.augmentation.rotation"
+      },
+      "Brightness": {
+         "Type": "input",
+         "Label": "Brightness (0~1, 0 = off)",
+         "Prameter": "hyperparameter.augmentation.brightness"
+      },
+      "Contrast": {
+         "Type": "input",
+         "Label": "Contrast (0~1, 0 = off)",
+         "Prameter": "hyperparameter.augmentation.contrast"
+      }
+    }
+  }
+}
