@@ -95,53 +95,9 @@ class DAQ_SaveBuilder_DAQ_OLD:
             file_full_path = file_full_path[:-3] + '.pth'
 
         save_uri = f"{self.__save_url}/{file_full_path}"
-
-        # TensorFlow/Keras 모델은 H5에 inference_info를 직접 내장한 후 업로드
-        is_tf_model = hasattr(model, 'trainable_variables') and not hasattr(model, 'state_dict')
-        if is_tf_model and file_full_path.endswith('.h5'):
-            self._upload_tensorflow_model_h5(model, save_uri)
-        else:
-            mpp.daq.object_service.upload_model(model, uri=save_uri, inference_info=self.__inference_info, channel=self.__operation_channel, access_token=self.__access_token, chunk_size=self.__chunk_size)
-
+        mpp.daq.object_service.upload_model(model, uri=save_uri, inference_info=self.__inference_info, channel=self.__operation_channel, access_token=self.__access_token, chunk_size=self.__chunk_size)
         self._register_saved_file(file_full_path, file_type='model')
         return self
-
-    def _upload_tensorflow_model_h5(self, model, save_uri: str):
-        """TF 모델을 H5로 저장 → inference_info attrs 추가 → upload_object."""
-        import io
-        import h5py
-        import tempfile
-
-        with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as tmp:
-            tmp_path = tmp.name
-
-        try:
-            model.save(tmp_path, save_format='h5')
-
-            if self.__inference_info is not None:
-                inference_info_json = json.dumps(self.__inference_info, ensure_ascii=False)
-                with h5py.File(tmp_path, 'a') as f:
-                    f.attrs['inference_info'] = inference_info_json
-
-            with open(tmp_path, 'rb') as f:
-                stream = io.BufferedReader(io.BytesIO(f.read()))
-
-            uri_path, fileinfo = os.path.split(save_uri)
-            filename, ext = os.path.splitext(fileinfo)
-            mpp.daq.object_service.upload_object(
-                stream=stream,
-                filename=filename,
-                extension=ext,
-                uri=uri_path,
-                channel=self.__operation_channel,
-                access_token=self.__access_token,
-                chunk_size=self.__chunk_size
-            )
-        finally:
-            try:
-                os.remove(tmp_path)
-            except Exception:
-                pass
 
     def save_file(self, file, file_full_path: str):
         if not isinstance(file_full_path, str):

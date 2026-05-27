@@ -8,7 +8,8 @@ from .inference import Inference, parse_inference_info
 class TensorflowInference(Inference):
     """
     TensorFlow Keras 모델 추론.
-    inference_info 는 모델에 내장된 attribute/variable에서 읽는다.
+    H5 모델의 extra_info 그룹 inference_info attribute에서 읽는다.
+    (mpp.daq.object_service.upload_model 및 Local_SaveBuilder와 동일한 형식)
     """
 
     def __init__(self, model_path: str, device: str,
@@ -23,31 +24,13 @@ class TensorflowInference(Inference):
 
         inference_info_str = None
 
-        # 1) tf.Variable로 내장된 경우 (SavedModel/keras 포맷)
-        if hasattr(self._model, 'inference_info'):
-            try:
-                inference_info_str = self._model.inference_info.numpy().decode('utf-8')
-            except Exception:
-                inference_info_str = None
-
-        # 2) H5 파일의 attribute로 내장된 경우
-        if inference_info_str is None and model_path.endswith('.h5') and os.path.isfile(model_path):
-            try:
-                import h5py
-                with h5py.File(model_path, 'r') as f:
-                    if 'inference_info' in f.attrs:
-                        inference_info_str = f.attrs['inference_info']
-                        if isinstance(inference_info_str, bytes):
-                            inference_info_str = inference_info_str.decode('utf-8')
-                    # extra_info 그룹 (구버전 DAQ OLD 방식)도 시도
-                    if inference_info_str is None and 'extra_info' in f:
-                        extra = f['extra_info']
-                        if 'inference_info' in extra.attrs:
-                            inference_info_str = extra.attrs['inference_info']
-                            if isinstance(inference_info_str, bytes):
-                                inference_info_str = inference_info_str.decode('utf-8')
-            except Exception:
-                pass
+        if model_path.endswith('.h5') and os.path.isfile(model_path):
+            import h5py
+            with h5py.File(model_path, 'r') as f:
+                if 'extra_info' in f and 'inference_info' in f['extra_info'].attrs:
+                    inference_info_str = f['extra_info'].attrs['inference_info']
+                    if isinstance(inference_info_str, bytes):
+                        inference_info_str = inference_info_str.decode('utf-8')
 
         if inference_info_str is None:
             raise ValueError(

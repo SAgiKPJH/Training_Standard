@@ -191,24 +191,21 @@ class Local_SaveBuilder:
             self._save_model_with_pickle(model, save_path)
 
     def _save_tensorflow_model(self, model, save_path: str, extension: str):
-        """TensorFlow 모델을 저장합니다. inference_info는 모델에 내장."""
-        import tensorflow as tf
-        inference_info_json = None
-        if self.__inference_info is not None:
-            inference_info_json = json.dumps(self.__inference_info, ensure_ascii=False)
-            # SavedModel/keras 포맷에서는 tf.Variable로 내장 가능
-            model.inference_info = tf.Variable(inference_info_json, trainable=False, dtype=tf.string, name="inference_info")
-
+        """TensorFlow 모델을 저장합니다.
+        H5 포맷: mpp.daq.object_service.upload_model와 동일하게 extra_info 그룹의
+        inference_info attribute에 JSON으로 저장합니다.
+        """
         if extension == '.h5':
             model.save(save_path, save_format='h5')
-            # H5는 tf.Variable을 직접 저장하지 않으므로, h5py로 attribute 직접 기록
-            if inference_info_json is not None:
-                try:
-                    import h5py
-                    with h5py.File(save_path, 'a') as f:
-                        f.attrs['inference_info'] = inference_info_json
-                except Exception:
-                    pass
+            if self.__inference_info is not None:
+                import h5py
+                inference_info_json = json.dumps(self.__inference_info, ensure_ascii=False)
+                with h5py.File(save_path, 'a') as f:
+                    if 'extra_info' in f:
+                        extra_info = f['extra_info']
+                    else:
+                        extra_info = f.create_group('extra_info')
+                    extra_info.attrs['inference_info'] = inference_info_json
         elif extension == '.keras':
             model.save(save_path, save_format='keras')
         else:
