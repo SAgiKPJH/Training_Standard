@@ -9,7 +9,7 @@
 ##$--
 
 parameters = '''{
-    "version" : "CNN_Training_Standard_v1.0.5",
+    "version" : "CNN_Training_Standard_v1.0.6",
     "hyperparameter":{
         "framework" : "pytorch",
         "network_name" : "efficientnet_b0",

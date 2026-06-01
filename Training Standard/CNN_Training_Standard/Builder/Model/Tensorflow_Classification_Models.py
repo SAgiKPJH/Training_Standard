@@ -1,4 +1,18 @@
 import tensorflow as tf
+from .Models.TF_B3_mirero import build_B3_mirero
+from .Models.TF_B7_mirero import build_B7_mirero
+from .Models.TF_V2S_mirero import build_V2S_mirero
+from .Models.TF_V2M_mirero import build_V2M_mirero
+from .Models.TF_V2L_mirero import build_V2L_mirero
+
+# 커스텀 모델 (별도 build 함수가 필요한 모델)
+_CUSTOM_TF_MODELS = {
+    "B3_mirero": build_B3_mirero,
+    "B7_mirero": build_B7_mirero,
+    "V2S_mirero": build_V2S_mirero,
+    "V2M_mirero": build_V2M_mirero,
+    "V2L_mirero": build_V2L_mirero,
+}
 
 # tf.keras.applications에서 가져올 모델 이름 매핑
 _TF_MODELS = {
@@ -77,15 +91,22 @@ class Tensorflow_Classification_Models:
         if network_name is None:
             raise ValueError("network_name is required")
 
-        model_fn = _resolve_tf_model(network_name)
-        if model_fn is None:
-            available = [n for n in _TF_MODELS if _resolve_tf_model(n) is not None]
-            raise ValueError(
-                f"Unsupported network: '{network_name}'. "
-                f"This TensorFlow (v{tf.__version__}) supports: {available}"
-            )
-
         with tf.device(self.__device):
+            # 커스텀 모델 (B3_mirero, V2S_mirero 등)
+            if network_name in _CUSTOM_TF_MODELS:
+                build_fn = _CUSTOM_TF_MODELS[network_name]
+                self.__model = build_fn(num_classes=num_classes, input_size=input_size)
+                return self
+
+            # tf.keras.applications 기반 모델
+            model_fn = _resolve_tf_model(network_name)
+            if model_fn is None:
+                available = list(_CUSTOM_TF_MODELS.keys()) + [n for n in _TF_MODELS if _resolve_tf_model(n) is not None]
+                raise ValueError(
+                    f"Unsupported network: '{network_name}'. "
+                    f"This TensorFlow (v{tf.__version__}) supports: {available}"
+                )
+
             inputs = tf.keras.layers.Input(shape=(input_size, input_size, 3))
             base_model = model_fn(
                 include_top=False,

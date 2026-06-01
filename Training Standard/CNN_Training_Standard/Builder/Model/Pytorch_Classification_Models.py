@@ -2,11 +2,21 @@ import torch
 import torchvision
 from .Models.InceptionV2 import InceptionV2
 from .Models.InceptionV4 import InceptionV4
+from .Models.B3_mirero import B3_mirero
+from .Models.B7_mirero import B7_mirero
+from .Models.V2S_mirero import V2S_mirero
+from .Models.V2M_mirero import V2M_mirero
+from .Models.V2L_mirero import V2L_mirero
 
-# 커스텀 모델 (torchvision에 없는 것)
+# 커스텀 모델 (torchvision에 없거나 별도 정의가 필요한 모델)
 _CUSTOM_MODELS = {
     "inceptionv2": InceptionV2,
     "inceptionv4": InceptionV4,
+    "B3_mirero": B3_mirero,
+    "B7_mirero": B7_mirero,
+    "V2S_mirero": V2S_mirero,
+    "V2M_mirero": V2M_mirero,
+    "V2L_mirero": V2L_mirero,
 }
 
 # torchvision.models에서 가져올 모델 이름 매핑 (key: 사용자 이름, value: torchvision attr 이름)
@@ -115,6 +125,8 @@ def _resolve_model(network_name: str):
         attr_name = _TORCHVISION_MODELS[network_name]
         return getattr(torchvision.models, attr_name, None)
     return None
+
+
 
 
 class Pytorch_Classification_Models:

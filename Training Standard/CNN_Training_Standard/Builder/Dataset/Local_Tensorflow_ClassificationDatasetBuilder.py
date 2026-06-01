@@ -1,7 +1,5 @@
 import os
 import random
-import cv2
-import numpy as np
 import tensorflow as tf
 
 class Local_Tensorflow_ClassificationDatasetBuilder:
@@ -35,27 +33,34 @@ class Local_Tensorflow_ClassificationDatasetBuilder:
         self.__augmentation = augmentation or {}
         return self
 
-    def _preprocess_image(self, image_path, label):
-        image = cv2.imread(image_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = cv2.resize(image, (self.__input_size, self.__input_size))
-        image = image.astype(np.float32) / 255.0
-        return image, label
+    def _load_image(self, path, label):
+        """경로 텐서를 받아 디스크에서 1장 디코딩하고 resize + [0,1] 스케일링.
+        tf.data.map에서 호출되어 graph mode로 실행됨 (lazy load)."""
+        img_bytes = tf.io.read_file(path)
+        img = tf.io.decode_image(img_bytes, channels=3, expand_animations=False)
+        img.set_shape([None, None, 3])
+        img = tf.image.resize(img, [self.__input_size, self.__input_size])
+        img = tf.cast(img, tf.float32) / 255.0
+        return img, label
 
     def _create_tf_dataset(self, uri_list, label_list, batch_size, shuffle):
+        """Lazy load 기반 tf.data 파이프라인.
+        경로 문자열만 메모리에 두고, .map에서 batch 직전에 1장씩 디스크에서 로드한다.
+        이미지 N장 전체를 한 번에 RAM에 올리지 않으므로 대용량 데이터셋도 안전.
+        """
         from .TF_AugmentationBuilder import build_augmentation_fn
 
-        images = []
-        labels = []
-        for uri, label in zip(uri_list, label_list):
-            img, lbl = self._preprocess_image(uri, label)
-            images.append(img)
-            labels.append(lbl)
+        if len(uri_list) == 0:
+            raise ValueError("uri_list is empty")
 
-        images = np.array(images, dtype=np.float32)
-        labels = np.array(labels, dtype=np.int64)
+        paths = tf.constant(uri_list, dtype=tf.string)
+        labels = tf.constant(label_list, dtype=tf.int64)
+        dataset = tf.data.Dataset.from_tensor_slices((paths, labels))
 
-        dataset = tf.data.Dataset.from_tensor_slices((images, labels))
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=len(uri_list), reshuffle_each_iteration=True)
+
+        dataset = dataset.map(self._load_image, num_parallel_calls=tf.data.AUTOTUNE)
 
         augment_fn = build_augmentation_fn(self.__augmentation)
         if augment_fn is not None:
@@ -65,8 +70,6 @@ class Local_Tensorflow_ClassificationDatasetBuilder:
         std = self.__normalize_stdev
         dataset = dataset.map(lambda img, lbl: ((img - mean) / std, lbl), num_parallel_calls=tf.data.AUTOTUNE)
 
-        if shuffle:
-            dataset = dataset.shuffle(buffer_size=len(uri_list))
         dataset = dataset.batch(batch_size, drop_remainder=(batch_size > 1))
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
         return dataset

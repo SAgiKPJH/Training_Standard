@@ -48,16 +48,23 @@ class Pytorch_TrainingBuilder:
         return self
     
     def init_criterion(self, criterion_name):
-        if criterion_name.lower() == "crossentropyloss":
-            criterion = nn.CrossEntropyLoss()
-        elif criterion_name.lower() == "bcewithlogitsloss":
-            criterion = nn.BCEWithLogitsLoss()
-        elif criterion_name.lower() == "focalloss":
-            criterion = nn.BCEWithLogitsLoss()
-        elif criterion_name.lower() == "mse":
-            criterion = nn.MSELoss()
+        # 모델이 softmax 출력이면 NLLLoss(log(output))를 써야 함 (mirero 변종)
+        is_softmax_output = getattr(self.__model, 'is_mirero_softmax', False)
 
-        self.__criterion = criterion
+        name = criterion_name.lower()
+        if name == "crossentropyloss":
+            if is_softmax_output:
+                self.__criterion = _LogNLLLoss()
+            else:
+                self.__criterion = nn.CrossEntropyLoss()
+        elif name == "bcewithlogitsloss":
+            self.__criterion = nn.BCELoss() if is_softmax_output else nn.BCEWithLogitsLoss()
+        elif name == "focalloss":
+            self.__criterion = nn.BCELoss() if is_softmax_output else nn.BCEWithLogitsLoss()
+        elif name == "mse":
+            self.__criterion = nn.MSELoss()
+        else:
+            raise Exception("Invalid Criterion Option")
         return self
 
     def train(self, train_data_loader, validation_data_loader, hook:TrainHook = None):
@@ -140,3 +147,16 @@ class Pytorch_TrainingBuilder:
 
     def builder(self):
         return self
+
+
+class _LogNLLLoss(nn.Module):
+    """softmax 출력 텐서에 대한 CrossEntropy.
+    nn.CrossEntropyLoss와 동일한 결과지만 입력이 이미 softmax된 probability일 때 사용.
+    """
+    def __init__(self, eps=1e-8):
+        super().__init__()
+        self.eps = eps
+        self.nll = nn.NLLLoss()
+
+    def forward(self, probs, target):
+        return self.nll(torch.log(probs.clamp(min=self.eps)), target)

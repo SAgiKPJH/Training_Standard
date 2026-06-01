@@ -45,12 +45,20 @@ class Tensorflow_TrainingBuilder:
 
     def init_criterion(self, criterion_name):
         name = criterion_name.lower()
+        # 모델의 마지막 layer activation이 softmax이면 from_logits=False
+        from_logits = True
+        if self.__model is not None:
+            last_layer = self.__model.layers[-1]
+            act = getattr(last_layer, 'activation', None)
+            if act is not None and getattr(act, '__name__', '') == 'softmax':
+                from_logits = False
+
         if name == "crossentropyloss":
-            self.__criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+            self.__criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=from_logits)
         elif name == "bcewithlogitsloss":
-            self.__criterion = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+            self.__criterion = tf.keras.losses.BinaryCrossentropy(from_logits=from_logits)
         elif name == "focalloss":
-            self.__criterion = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+            self.__criterion = tf.keras.losses.BinaryCrossentropy(from_logits=from_logits)
         elif name == "mse":
             self.__criterion = tf.keras.losses.MeanSquaredError()
         else:
