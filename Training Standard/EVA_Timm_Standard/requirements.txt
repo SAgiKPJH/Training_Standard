@@ -1,0 +1,11 @@
+# EVA_Timm_Standard 의존성
+# torch / torchvision 은 플랫폼(CPU/CUDA)에 맞춰 별도 설치 권장 (README 참고)
+# 아래는 CPU 기준 예시 버전. CUDA 사용 시 https://pytorch.org 의 명령으로 설치.
+torch>=2.1.0
+torchvision>=0.16.0
+
+timm==1.0.25
+huggingface-hub>=0.23.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+pillow>=10.0.0
