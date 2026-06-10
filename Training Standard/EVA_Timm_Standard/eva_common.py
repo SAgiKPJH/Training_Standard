@@ -25,10 +25,30 @@ NORM_STD = (0.26862954, 0.26130258, 0.27577711)
 IMG_EXT = (".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff")
 
 
-def build_model(num_classes, pretrained, device="cpu"):
-    """timm EVA 모델 생성. pretrained=True 시 HuggingFace 캐시에서 가중치 로드/다운로드."""
+def _load_local_weights(model, path):
+    """로컬 가중치 파일(.safetensors / .pth / .bin)을 모델에 로드. head 불일치 무시."""
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".safetensors":
+        from safetensors.torch import load_file
+        state_dict = load_file(path)
+    else:
+        state_dict = torch.load(path, map_location="cpu", weights_only=True)
+    missing, _ = model.load_state_dict(state_dict, strict=False)
+    if missing:
+        print(f"  Missing keys (head — 정상): {missing}")
+
+
+def build_model(num_classes, pretrained, device="cpu", pretrained_path=None):
+    """timm EVA 모델 생성.
+    pretrained_path 파일이 있으면 로컬 우선 로드, 없으면 HuggingFace Hub 다운로드."""
     import timm
-    model = timm.create_model(MODEL_NAME, pretrained=pretrained, num_classes=num_classes)
+    if pretrained_path and os.path.isfile(pretrained_path):
+        print(f"Loading local pretrained: {pretrained_path}")
+        model = timm.create_model(MODEL_NAME, pretrained=False, num_classes=num_classes)
+        _load_local_weights(model, pretrained_path)
+    else:
+        print(f"Loading pretrained model: {MODEL_NAME} ...")
+        model = timm.create_model(MODEL_NAME, pretrained=pretrained, num_classes=num_classes)
     return model.to(device)
 
 
@@ -74,7 +94,8 @@ class BGRClassificationDataset(Dataset):
 
     def __getitem__(self, index):
         path, label = self.__samples[index]
-        image = cv2.imread(path)  # BGR, 변환 없음
+        buf = np.fromfile(path, dtype=np.uint8)
+        image = cv2.imdecode(buf, cv2.IMREAD_COLOR)  # BGR, 한국어 경로 대응
         if image is None:
             raise RuntimeError(f"이미지 로드 실패: {path}")
         return preprocess_bgr(image), label

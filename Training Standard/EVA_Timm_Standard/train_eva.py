@@ -1,11 +1,14 @@
 """
-EVA 학습 테스트
-===============
-timm eva_large_patch14_196 을 로컬 데이터셋으로 간단 파인튜닝하고
+EVA 학습
+========
+timm eva_large_patch14_196 을 로컬 데이터셋으로 파인튜닝하고
 추론에 필요한 정보를 포함한 체크포인트(model.pth)를 저장한다.
 
 실행:
     python train_eva.py
+
+사전학습 가중치 준비 (오프라인 환경):
+    python download_pretrained.py
 """
 import os
 import time
@@ -20,15 +23,16 @@ import eva_common as ec
 
 # ── 설정 ─────────────────────────────────────────────────
 _HERE = os.path.dirname(os.path.abspath(__file__))
-DATASET_PATH = os.path.normpath(os.path.join(_HERE, "..", "..", "create_dataset", "dataset"))
-OUTPUT_PATH = os.path.join(_HERE, "output", "model.pth")
+DATASET_PATH   = os.path.normpath(os.path.join(_HERE, "..", "..", "create_dataset", "dataset"))
+OUTPUT_PATH    = os.path.join(_HERE, "output", "model.pth")
+PRETRAINED_PATH = os.path.join(_HERE, "data", "pretrained", "model.safetensors")  # 없으면 HuggingFace 자동 다운로드
 
-EPOCH = 1
+EPOCH      = 10
 BATCH_SIZE = 2
-LR = 1e-4
+LR         = 1e-4
 TRAIN_RATIO = 0.8
-USING_GPU = torch.cuda.is_available()
-MAX_ITER = 10  # 간단 테스트용 epoch 당 최대 iteration (None 이면 전체)
+USING_GPU  = torch.cuda.is_available()
+MAX_ITER   = 10  # epoch 당 최대 iteration (None 이면 전체)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -55,8 +59,8 @@ def main():
     val_loader = DataLoader(ec.BGRClassificationDataset(val_samples),
                             batch_size=1, shuffle=False, num_workers=0) if val_samples else None
 
-    logger.info(f"Loading pretrained model: {ec.MODEL_NAME} ...")
-    model = ec.build_model(len(classes), pretrained=True, device=device)
+    model = ec.build_model(len(classes), pretrained=True, device=device,
+                           pretrained_path=PRETRAINED_PATH)
     optimizer = optim.Adam(model.parameters(), lr=LR)
     criterion = nn.CrossEntropyLoss()
 
@@ -92,7 +96,7 @@ def main():
             val_loss = v_running / max(1, v_n)
 
         logger.info(f"[Epoch {epoch}] train_loss={train_loss:.4f} "
-                    f"val_loss={val_loss if val_loss is None else round(val_loss,4)} "
+                    f"val_loss={val_loss if val_loss is None else round(val_loss, 4)} "
                     f"time={time.time()-epoch_start:.1f}s")
 
         cur = val_loss if val_loss is not None else train_loss

@@ -1,18 +1,19 @@
 """
-EVA 추론 테스트
-===============
+EVA 추론
+========
 저장된 체크포인트(model.pth)로 단일 이미지를 추론한다.
 학습과 동일한 BGR + 전처리(eva_common)를 사용한다.
 
 실행:
-    python inference_eva.py                 # output/model.pth + 데이터셋 첫 이미지 자동 사용
-    python inference_eva.py <이미지경로>     # 특정 이미지 추론
+    python inference_eva.py                          # output/model.pth + 데이터셋 첫 이미지 자동 사용
+    python inference_eva.py <이미지경로>              # 특정 이미지 추론
     python inference_eva.py <이미지경로> <체크포인트경로>
 """
 import os
 import sys
 import logging
 import cv2
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -39,7 +40,8 @@ def predict(image_path, ckpt_path):
 
     model, classes = ec.load_checkpoint(ckpt_path, device=device)
 
-    image = cv2.imread(image_path)  # BGR, 변환 없음
+    buf = np.fromfile(image_path, dtype=np.uint8)
+    image = cv2.imdecode(buf, cv2.IMREAD_COLOR)  # BGR, 한국어 경로 대응
     if image is None:
         raise RuntimeError(f"이미지 로드 실패: {image_path}")
     tensor = ec.preprocess_bgr(image).unsqueeze(0).to(device)
